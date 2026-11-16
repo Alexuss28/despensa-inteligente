@@ -109,3 +109,63 @@ test("La API rechaza un token inventado", async () => {
     .send({ token: "a".repeat(64) })
     .expect(400);
 });
+test("El reenvío responde igual para una cuenta inexistente y una pendiente", async () => {
+  const { app, cad, enviados } = preparar();
+
+  await request(app)
+    .post("/api/registro")
+    .send({
+      email: "reenvio@example.com",
+      password: "ClavePrueba123"
+    })
+    .expect(201);
+
+  const usuario = await cad.buscarPorEmail("reenvio@example.com");
+  usuario.confirmacionEnviadaEn = new Date(Date.now() - 61000);
+  await cad.guardar(usuario);
+
+  const inexistente = await request(app)
+    .post("/api/reenviar-confirmacion")
+    .send({ email: "inexistente@example.com" })
+    .expect(200);
+
+  const pendiente = await request(app)
+    .post("/api/reenviar-confirmacion")
+    .send({ email: "reenvio@example.com" })
+    .expect(200);
+
+  assert.deepEqual(pendiente.body, inexistente.body);
+
+  // Un envío del registro y otro del reenvío.
+  assert.equal(enviados.length, 2);
+  assert.notEqual(enviados[0].token, enviados[1].token);
+
+  await request(app)
+    .post("/api/confirmar-cuenta")
+    .send({ token: enviados[0].token })
+    .expect(400);
+
+  await request(app)
+    .post("/api/confirmar-cuenta")
+    .send({ token: enviados[1].token })
+    .expect(200);
+});
+
+test("El reenvío inmediato no envía un segundo correo", async () => {
+  const { app, enviados } = preparar();
+
+  await request(app)
+    .post("/api/registro")
+    .send({
+      email: "espera@example.com",
+      password: "ClavePrueba123"
+    })
+    .expect(201);
+
+  await request(app)
+    .post("/api/reenviar-confirmacion")
+    .send({ email: "espera@example.com" })
+    .expect(200);
+
+  assert.equal(enviados.length, 1);
+});

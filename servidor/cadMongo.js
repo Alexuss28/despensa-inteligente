@@ -98,6 +98,34 @@ class CadMongo {
   async cerrar() {
     await this.cliente.close();
   }
+    async renovarConfirmacion(
+    email,
+    tokenHash,
+    caducaEn,
+    ahora
+  ) {
+    const limite = new Date(ahora.getTime() - 60000);
+
+    const resultado = await this.usuarios.updateOne(
+      {
+        email,
+        estado: "pendiente",
+        $or: [
+          { confirmacionEnviadaEn: { $exists: false } },
+          { confirmacionEnviadaEn: { $lte: limite } }
+        ]
+      },
+      {
+        $set: {
+          confirmacionTokenHash: tokenHash,
+          confirmacionCaducaEn: caducaEn,
+          confirmacionEnviadaEn: ahora
+        }
+      }
+    );
+
+    return resultado.modifiedCount === 1;
+  }
 }
 
 module.exports = { CadMongo };

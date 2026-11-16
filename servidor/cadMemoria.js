@@ -40,6 +40,36 @@ class CadMemoria {
 
     return null;
   }
+    async renovarConfirmacion(
+    email,
+    tokenHash,
+    caducaEn,
+    ahora
+  ) {
+    const usuario = this.usuarios.get(email);
+
+    if (!usuario || usuario.estado !== "pendiente") {
+      return false;
+    }
+
+    const ultimoIntento = usuario.confirmacionEnviadaEn;
+
+    if (
+      ultimoIntento instanceof Date &&
+      ahora.getTime() - ultimoIntento.getTime() < 60000
+    ) {
+      return false;
+    }
+
+    this.usuarios.set(email, {
+      ...usuario,
+      confirmacionTokenHash: tokenHash,
+      confirmacionCaducaEn: caducaEn,
+      confirmacionEnviadaEn: ahora
+    });
+
+    return true;
+  }
 }
 
 module.exports = { CadMemoria };

@@ -145,4 +145,73 @@ test("La confirmación no reactiva una cuenta eliminada", async () => {
   );
   
 });
+test("El reenvío inmediato queda limitado", async () => {
+  const cad = new CadMemoria();
+  const sistema = new Sistema(cad);
 
+  await sistema.registrarUsuarioConConfirmacion(
+    "limite@example.com",
+    "ClavePrueba123"
+  );
+
+  const resultado = await sistema.prepararReenvioConfirmacion(
+    "limite@example.com"
+  );
+
+  assert.equal(resultado, null);
+});
+
+test("El reenvío sustituye el token anterior", async () => {
+  const cad = new CadMemoria();
+  const sistema = new Sistema(cad);
+
+  const original = await sistema.registrarUsuarioConConfirmacion(
+    "reenviar@example.com",
+    "ClavePrueba123"
+  );
+
+  // Simula el paso del tiempo sin esperar un minuto.
+  const usuario = await cad.buscarPorEmail("reenviar@example.com");
+  usuario.confirmacionEnviadaEn = new Date(Date.now() - 61000);
+  await cad.guardar(usuario);
+
+  const nuevo = await sistema.prepararReenvioConfirmacion(
+    "reenviar@example.com"
+  );
+
+  assert.ok(nuevo);
+  assert.notEqual(nuevo.token, original.token);
+
+  await assert.rejects(
+    sistema.confirmarCuenta(original.token),
+    error => error.estadoHTTP === 400
+  );
+
+  const confirmado = await sistema.confirmarCuenta(nuevo.token);
+  assert.equal(confirmado.estado, "activo");
+});
+
+test("No se prepara reenvío para cuentas inexistentes o activas", async () => {
+  const sistema = new Sistema(new CadMemoria());
+
+  assert.equal(
+    await sistema.prepararReenvioConfirmacion(
+      "inexistente@example.com"
+    ),
+    null
+  );
+
+  const { token } = await sistema.registrarUsuarioConConfirmacion(
+    "activa@example.com",
+    "ClavePrueba123"
+  );
+
+  await sistema.confirmarCuenta(token);
+
+  assert.equal(
+    await sistema.prepararReenvioConfirmacion(
+      "activa@example.com"
+    ),
+    null
+  );
+});

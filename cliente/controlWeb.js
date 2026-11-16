@@ -206,6 +206,18 @@ async function comprobarSesion() {
     }
   }
 }
+document.querySelector("#form-reenvio")
+  .addEventListener("submit", event => {
+    event.preventDefault();
+
+    ejecutarFormulario(event.currentTarget, async () => {
+      const email = document.querySelector("#reenvio-email").value;
+
+      const resultado = await rest.reenviarConfirmacion(email);
+
+      mostrarMensaje(resultado.mensaje);
+    });
+  });
 
 function prepararConfirmacion() {
   const parametros = new URLSearchParams(

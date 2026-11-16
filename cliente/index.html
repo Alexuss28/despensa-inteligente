@@ -16,13 +16,15 @@
     </header>
 
     <p id="mensaje" role="status" aria-live="polite"></p>
+
     <section id="confirmacion" class="tarjeta" hidden>
-  <h2>Confirmar cuenta</h2>
-  <p>Pulsa el botón para confirmar tu correo electrónico.</p>
-  <button id="btn-confirmar-cuenta" type="button">
-    Confirmar mi cuenta
-  </button>
-</section>
+      <h2>Confirmar cuenta</h2>
+      <p>Pulsa el botón para confirmar tu correo electrónico.</p>
+
+      <button id="btn-confirmar-cuenta" type="button">
+        Confirmar mi cuenta
+      </button>
+    </section>
 
     <section id="acceso">
       <div class="tarjeta">
@@ -74,49 +76,82 @@
 
           <button type="submit">Crear cuenta</button>
         </form>
+
+        <h3>¿No has recibido el correo?</h3>
+
+        <form id="form-reenvio">
+          <label for="reenvio-email">Email de la cuenta</label>
+          <input
+            id="reenvio-email"
+            type="email"
+            autocomplete="email"
+            aria-describedby="ayuda-reenvio"
+            required
+          >
+
+          <p id="ayuda-reenvio" class="ayuda">
+            Espera al menos un minuto entre solicitudes.
+            Cada nuevo enlace sustituye al anterior.
+          </p>
+
+          <button type="submit">Reenviar confirmación</button>
+        </form>
       </div>
     </section>
 
     <section id="panel" class="tarjeta" hidden>
       <h2>Mi despensa</h2>
       <p id="usuario"></p>
+
       <p>
         Tu cuenta está preparada. La gestión de alimentos
         se incorporará en una próxima ampliación.
       </p>
+
       <button id="btn-admin" type="button" hidden>
         Ver usuarios registrados
       </button>
-      <button id="btn-salir" type="button">Cerrar sesión</button>
+
+      <button id="btn-salir" type="button">
+        Cerrar sesión
+      </button>
     </section>
-    <section id="panel-admin" class="tarjeta" hidden
-         aria-labelledby="titulo-admin">
-  <div class="cabecera-admin">
-    <div>
-      <h2 id="titulo-admin">Usuarios registrados</h2>
-      <p>Consulta las cuentas, sus roles y sus estados.</p>
-    </div>
-    <button id="btn-actualizar-usuarios" type="button">
-      Actualizar lista
-    </button>
-  </div>
 
-  <p id="estado-usuarios" role="status" aria-live="polite"></p>
+    <section
+      id="panel-admin"
+      class="tarjeta"
+      aria-labelledby="titulo-admin"
+      hidden
+    >
+      <div class="cabecera-admin">
+        <div>
+          <h2 id="titulo-admin">Usuarios registrados</h2>
+          <p>Consulta las cuentas, sus roles y sus estados.</p>
+        </div>
 
-  <div class="tabla-contenedor">
-    <table id="tabla-usuarios" hidden>
-      <caption>Listado de cuentas de la aplicación</caption>
-      <thead>
-        <tr>
-          <th scope="col">Email</th>
-          <th scope="col">Rol</th>
-          <th scope="col">Estado</th>
-        </tr>
-      </thead>
-      <tbody id="filas-usuarios"></tbody>
-    </table>
-  </div>
-</section>
+        <button id="btn-actualizar-usuarios" type="button">
+          Actualizar lista
+        </button>
+      </div>
+
+      <p id="estado-usuarios" role="status" aria-live="polite"></p>
+
+      <div class="tabla-contenedor">
+        <table id="tabla-usuarios" hidden>
+          <caption>Listado de cuentas de la aplicación</caption>
+
+          <thead>
+            <tr>
+              <th scope="col">Email</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+
+          <tbody id="filas-usuarios"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 </body>
 </html>

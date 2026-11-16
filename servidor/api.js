@@ -71,6 +71,40 @@ function crearApi(
       next(error);
     }
   });
+    router.post("/reenviar-confirmacion", async (req, res, next) => {
+    try {
+      if (!correo || typeof correo.enviarConfirmacion !== "function") {
+        return res.status(503).json({
+          error: "El servicio de correo no está disponible"
+        });
+      }
+
+      const resultado =
+        await sistema.prepararReenvioConfirmacion(req.body?.email);
+
+      if (resultado) {
+        try {
+          await correo.enviarConfirmacion(
+            resultado.email,
+            resultado.token
+          );
+        } catch {
+          console.error(
+            "No se ha podido enviar el correo de confirmación"
+          );
+        }
+      }
+
+      res.json({
+        mensaje:
+          "Si la cuenta está pendiente y ha pasado al menos un minuto " +
+          "desde el último intento, intentaremos enviarte un nuevo enlace. " +
+          "Revisa también la carpeta de spam."
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   router.post("/login", async (req, res, next) => {
     try {

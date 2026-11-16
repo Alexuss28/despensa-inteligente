@@ -47,4 +47,11 @@ class ClienteRest {
     confirmarCuenta(token) {
     return this.solicitar("/confirmar-cuenta", "POST", { token });
   }
+    reenviarConfirmacion(email) {
+    return this.solicitar(
+      "/reenviar-confirmacion",
+      "POST",
+      { email }
+    );
+  }
 }

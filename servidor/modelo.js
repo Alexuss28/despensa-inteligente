@@ -68,6 +68,7 @@ class Sistema {
 
     usuario.confirmacionTokenHash = confirmacion.tokenHash;
     usuario.confirmacionCaducaEn = confirmacion.caducaEn;
+    usuario.confirmacionEnviadaEn = new Date();
 
     await this.cad.guardar(usuario);
 
@@ -257,6 +258,28 @@ class Sistema {
     }
 
     return this.eliminarUsuario(objetivo);
+  }
+    async prepararReenvioConfirmacion(email) {
+    const normalizado = this.normalizarEmail(email);
+    const ahora = new Date();
+    const confirmacion = crearConfirmacion(ahora.getTime());
+
+    const renovada = await this.cad.renovarConfirmacion(
+      normalizado,
+      confirmacion.tokenHash,
+      confirmacion.caducaEn,
+      ahora
+    );
+
+    if (!renovada) {
+      return null;
+    }
+
+    // Resultado interno para el componente de correo.
+    return {
+      email: normalizado,
+      token: confirmacion.token
+    };
   }
 }
 function calcularBloqueo(fallos, ahora) {
