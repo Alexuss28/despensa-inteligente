@@ -26,10 +26,15 @@ class CadMongo {
 
       const cad = new CadMongo(cliente, baseDatos);
 
-      await cad.usuarios.createIndex(
-        { email: 1 },
-        { unique: true }
-      );
+          await cad.usuarios.createIndex(
+      { googleSub: 1 },
+      {
+        unique: true,
+        partialFilterExpression: {
+          googleSub: { $type: "string" }
+        }
+      }
+    );
 
       return cad;
     } catch (error) {
@@ -38,9 +43,16 @@ class CadMongo {
     }
   }
 
+
   async buscarPorEmail(email) {
     return this.usuarios.findOne(
       { email },
+      { projection: { _id: 0 } }
+    );
+  }
+    async buscarPorGoogleSub(googleSub) {
+    return this.usuarios.findOne(
+      { googleSub },
       { projection: { _id: 0 } }
     );
   }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
   <script src="/clienteRest.js" defer></script>
   <script src="/controlWeb.js" defer></script>
 </head>
+
 <body>
   <main>
     <header>
@@ -32,23 +34,18 @@
 
         <form id="form-login">
           <label for="login-email">Email</label>
-          <input
-            id="login-email"
-            type="email"
-            autocomplete="username"
-            required
-          >
+          <input id="login-email" type="email" autocomplete="username" required>
 
           <label for="login-password">Contraseña</label>
-          <input
-            id="login-password"
-            type="password"
-            autocomplete="current-password"
-            required
-          >
+          <input id="login-password" type="password" autocomplete="current-password" required>
 
           <button type="submit">Entrar</button>
         </form>
+        <p class="alternativa-acceso">También puedes acceder con Google</p>
+
+        <a class="boton-google" href="/api/auth/google">
+          Continuar con Google
+        </a>
       </div>
 
       <div class="tarjeta">
@@ -56,21 +53,10 @@
 
         <form id="form-registro">
           <label for="registro-email">Email</label>
-          <input
-            id="registro-email"
-            type="email"
-            autocomplete="username"
-            required
-          >
+          <input id="registro-email" type="email" autocomplete="username" required>
 
           <label for="registro-password">Contraseña</label>
-          <input
-            id="registro-password"
-            type="password"
-            autocomplete="new-password"
-            minlength="8"
-            required
-          >
+          <input id="registro-password" type="password" autocomplete="new-password" minlength="8" required>
 
           <p class="ayuda">Utiliza al menos 8 caracteres.</p>
 
@@ -81,13 +67,7 @@
 
         <form id="form-reenvio">
           <label for="reenvio-email">Email de la cuenta</label>
-          <input
-            id="reenvio-email"
-            type="email"
-            autocomplete="email"
-            aria-describedby="ayuda-reenvio"
-            required
-          >
+          <input id="reenvio-email" type="email" autocomplete="email" aria-describedby="ayuda-reenvio" required>
 
           <p id="ayuda-reenvio" class="ayuda">
             Espera al menos un minuto entre solicitudes.
@@ -117,12 +97,7 @@
       </button>
     </section>
 
-    <section
-      id="panel-admin"
-      class="tarjeta"
-      aria-labelledby="titulo-admin"
-      hidden
-    >
+    <section id="panel-admin" class="tarjeta" aria-labelledby="titulo-admin" hidden>
       <div class="cabecera-admin">
         <div>
           <h2 id="titulo-admin">Usuarios registrados</h2>
@@ -154,4 +129,5 @@
     </section>
   </main>
 </body>
+
 </html>

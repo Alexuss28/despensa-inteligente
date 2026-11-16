@@ -10,6 +10,22 @@ function identificarOperacion(req) {
   if (ruta === "/sesion") return "consulta_sesion";
   if (ruta === "/usuarios") return "listar_usuarios";
 
+  if (ruta === "/confirmar-cuenta") {
+    return "confirmar_cuenta";
+  }
+
+  if (ruta === "/reenviar-confirmacion") {
+    return "reenviar_confirmacion";
+  }
+
+  if (ruta === "/auth/google") {
+    return "iniciar_acceso_google";
+  }
+
+  if (ruta === "/auth/google/callback") {
+    return "completar_acceso_google";
+  }
+
   if (/^\/usuarios\/[^/]+\/activo\/?$/.test(ruta)) {
     return "consultar_usuario_activo";
   }
@@ -48,7 +64,7 @@ function registroActividad(req, res, next) {
       metodo: req.method,
       operacion,
       estado,
-      duracionMs: Math.round(duracionMs),
+      duracionMs: Math.round(duracionMs)
     }));
   });
 

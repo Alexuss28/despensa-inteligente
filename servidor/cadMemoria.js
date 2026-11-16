@@ -7,6 +7,15 @@ class CadMemoria {
     const usuario = this.usuarios.get(email);
     return usuario ? { ...usuario } : null;
   }
+    async buscarPorGoogleSub(googleSub) {
+    for (const usuario of this.usuarios.values()) {
+      if (usuario.googleSub === googleSub) {
+        return { ...usuario };
+      }
+    }
+
+    return null;
+  }
 
   async guardar(usuario) {
     this.usuarios.set(usuario.email, { ...usuario });
