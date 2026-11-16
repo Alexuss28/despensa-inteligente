@@ -2,7 +2,10 @@ const express = require("express");
 const { NOMBRE_COOKIE, opcionesCookie } = require("./sesion");
 const { calcularBloqueo } = require("./modelo");
 
-function crearApi(sistema, { produccion = false } = {}) {
+function crearApi(
+  sistema,
+  { produccion = false, correo } = {}
+) {
   const router = express.Router();
     router.post("/prueba/bloqueo", (req, res, next) => {
     try {
@@ -17,16 +20,86 @@ function crearApi(sistema, { produccion = false } = {}) {
     }
   });
 
-  router.post("/registro", async (req, res, next) => {
+    router.post("/registro", async (req, res, next) => {
     try {
-      const usuario = await sistema.registrarUsuario(
-        req.body?.email,
-        req.body?.password
-      );
+      if (!correo || typeof correo.enviarConfirmacion !== "function") {
+        return res.status(503).json({
+          error: "El servicio de correo no está disponible"
+        });
+      }
+
+      const { usuario, token } =
+        await sistema.registrarUsuarioConConfirmacion(
+          req.body?.email,
+          req.body?.password
+        );
+
+      try {
+        await correo.enviarConfirmacion(usuario.email, token);
+      } catch {
+        // La cuenta ya está guardada, pero permanece pendiente.
+        // No registramos el token ni las credenciales del correo.
+        console.error("No se ha podido enviar el correo de confirmación");
+
+        return res.status(201).json({
+          usuario,
+          correoEnviado: false,
+          mensaje:
+            "Cuenta creada, pero no se ha podido enviar el correo. " +
+            "La cuenta permanece pendiente de confirmación."
+        });
+      }
 
       res.status(201).json({
         usuario,
-        mensaje: "Cuenta creada, pendiente de confirmación"
+        correoEnviado: true,
+        mensaje:
+          "Cuenta creada. Revisa tu correo para confirmar la cuenta."
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+    router.post("/confirmar-cuenta", async (req, res, next) => {
+    try {
+      await sistema.confirmarCuenta(req.body?.token);
+
+      res.json({
+        mensaje: "Cuenta confirmada. Ya puedes iniciar sesión."
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+    router.post("/reenviar-confirmacion", async (req, res, next) => {
+    try {
+      if (!correo || typeof correo.enviarConfirmacion !== "function") {
+        return res.status(503).json({
+          error: "El servicio de correo no está disponible"
+        });
+      }
+
+      const resultado =
+        await sistema.prepararReenvioConfirmacion(req.body?.email);
+
+      if (resultado) {
+        try {
+          await correo.enviarConfirmacion(
+            resultado.email,
+            resultado.token
+          );
+        } catch {
+          console.error(
+            "No se ha podido enviar el correo de confirmación"
+          );
+        }
+      }
+
+      res.json({
+        mensaje:
+          "Si la cuenta está pendiente y ha pasado al menos un minuto " +
+          "desde el último intento, intentaremos enviarte un nuevo enlace. " +
+          "Revisa también la carpeta de spam."
       });
     } catch (error) {
       next(error);

@@ -11,7 +11,8 @@ function crearApp(
   {
     secret = process.env.SESSION_SECRET,
     produccion = process.env.NODE_ENV === "production",
-    store
+    store,
+    correo
   } = {}
 ) {
   const app = express();
@@ -40,7 +41,10 @@ function crearApp(
     next();
   });
 
-  app.use("/api", crearApi(sistema, { produccion }));
+  app.use("/api", crearApi(sistema, {
+  produccion,
+  correo
+}));
 
   app.use("/api", (req, res) => {
     res.status(404).json({ error: "Ruta no encontrada" });

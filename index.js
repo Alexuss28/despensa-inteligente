@@ -7,7 +7,7 @@ const { CadMongo } = require("./servidor/cadMongo");
 const {
   prepararCuentaPrueba,
 } = require("./servidor/cuentaPrueba");
-
+const { crearCorreo } = require("./servidor/correo");
 async function arrancar() {
   let cad;
 
@@ -46,10 +46,13 @@ async function arrancar() {
 
     await prepararCuentaPrueba(sistema, cad, process.env);
 
+    const correo = crearCorreo(process.env);
+
     const app = crearApp(sistema, {
       secret,
       produccion: process.env.NODE_ENV === "production",
       store,
+      correo
     });
 
     const puerto = process.env.PORT || 3000;
@@ -59,13 +62,13 @@ async function arrancar() {
     });
 
     servidor.on("error", async (error) => {
-  console.error(
-    `No se ha podido iniciar el servidor HTTP: ${error.code}`
-  );
+      console.error(
+        `No se ha podido iniciar el servidor HTTP: ${error.code}`
+      );
 
-  await cad.cerrar();
-  process.exitCode = 1;
-});
+      await cad.cerrar();
+      process.exitCode = 1;
+    });
 
     let cerrando = false;
 

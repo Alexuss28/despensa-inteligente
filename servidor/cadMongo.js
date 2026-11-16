@@ -73,9 +73,58 @@ class CadMongo {
       .find({}, { projection: { _id: 0 } })
       .toArray();
   }
+    async confirmarCuenta(tokenHash, ahora) {
+    return this.usuarios.findOneAndUpdate(
+      {
+        estado: "pendiente",
+        confirmacionTokenHash: tokenHash,
+        confirmacionCaducaEn: { $gt: ahora }
+      },
+      {
+        $set: { estado: "activo" },
+        $unset: {
+          confirmacionTokenHash: "",
+          confirmacionCaducaEn: ""
+        }
+      },
+      {
+        returnDocument: "after",
+        includeResultMetadata: false,
+        projection: { _id: 0 }
+      }
+    );
+  }
 
   async cerrar() {
     await this.cliente.close();
+  }
+    async renovarConfirmacion(
+    email,
+    tokenHash,
+    caducaEn,
+    ahora
+  ) {
+    const limite = new Date(ahora.getTime() - 60000);
+
+    const resultado = await this.usuarios.updateOne(
+      {
+        email,
+        estado: "pendiente",
+        $or: [
+          { confirmacionEnviadaEn: { $exists: false } },
+          { confirmacionEnviadaEn: { $lte: limite } }
+        ]
+      },
+      {
+        $set: {
+          confirmacionTokenHash: tokenHash,
+          confirmacionCaducaEn: caducaEn,
+          confirmacionEnviadaEn: ahora
+        }
+      }
+    );
+
+    return resultado.modifiedCount === 1;
   }
 }
 

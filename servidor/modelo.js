@@ -1,5 +1,9 @@
 const { randomUUID } = require("node:crypto");
 const bcrypt = require("bcrypt");
+const {
+  crearConfirmacion,
+  resumirToken
+} = require("./confirmacion");
 
 class ErrorNegocio extends Error {
   constructor(mensaje, estadoHTTP) {
@@ -53,6 +57,50 @@ class Sistema {
     };
 
     await this.cad.guardar(usuario);
+
+    return this.usuarioPublico(usuario);
+  }
+    async registrarUsuarioConConfirmacion(email, password) {
+    const publico = await this.registrarUsuario(email, password);
+    const usuario = await this.cad.buscarPorEmail(publico.email);
+
+    const confirmacion = crearConfirmacion();
+
+    usuario.confirmacionTokenHash = confirmacion.tokenHash;
+    usuario.confirmacionCaducaEn = confirmacion.caducaEn;
+    usuario.confirmacionEnviadaEn = new Date();
+
+    await this.cad.guardar(usuario);
+
+    // Resultado interno para el futuro envío del correo.
+    // La API no debe devolver el token al navegador.
+    return {
+      usuario: publico,
+      token: confirmacion.token
+    };
+  }
+
+  async confirmarCuenta(token) {
+    const tokenHash = resumirToken(token);
+
+    if (!tokenHash) {
+      throw new ErrorNegocio(
+        "El enlace de confirmación no es válido o ha caducado",
+        400
+      );
+    }
+
+    const usuario = await this.cad.confirmarCuenta(
+      tokenHash,
+      new Date()
+    );
+
+    if (!usuario) {
+      throw new ErrorNegocio(
+        "El enlace de confirmación no es válido o ha caducado",
+        400
+      );
+    }
 
     return this.usuarioPublico(usuario);
   }
@@ -210,6 +258,28 @@ class Sistema {
     }
 
     return this.eliminarUsuario(objetivo);
+  }
+    async prepararReenvioConfirmacion(email) {
+    const normalizado = this.normalizarEmail(email);
+    const ahora = new Date();
+    const confirmacion = crearConfirmacion(ahora.getTime());
+
+    const renovada = await this.cad.renovarConfirmacion(
+      normalizado,
+      confirmacion.tokenHash,
+      confirmacion.caducaEn,
+      ahora
+    );
+
+    if (!renovada) {
+      return null;
+    }
+
+    // Resultado interno para el componente de correo.
+    return {
+      email: normalizado,
+      token: confirmacion.token
+    };
   }
 }
 function calcularBloqueo(fallos, ahora) {

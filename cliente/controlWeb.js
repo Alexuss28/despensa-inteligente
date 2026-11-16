@@ -206,5 +206,71 @@ async function comprobarSesion() {
     }
   }
 }
+document.querySelector("#form-reenvio")
+  .addEventListener("submit", event => {
+    event.preventDefault();
 
-comprobarSesion();
+    ejecutarFormulario(event.currentTarget, async () => {
+      const email = document.querySelector("#reenvio-email").value;
+
+      const resultado = await rest.reenviarConfirmacion(email);
+
+      mostrarMensaje(resultado.mensaje);
+    });
+  });
+
+function prepararConfirmacion() {
+  const parametros = new URLSearchParams(
+    window.location.hash.slice(1)
+  );
+
+  if (!parametros.has("confirmacion")) {
+    return false;
+  }
+
+  let token = parametros.get("confirmacion");
+
+  // Retira el token de la barra de direcciones.
+  window.history.replaceState(
+    null,
+    "",
+    window.location.pathname + window.location.search
+  );
+
+  mostrarAcceso();
+
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    mostrarMensaje("El enlace de confirmación no es válido.", true);
+    return true;
+  }
+
+  const seccion = document.querySelector("#confirmacion");
+  const boton = document.querySelector("#btn-confirmar-cuenta");
+
+  seccion.hidden = false;
+  acceso.hidden = true;
+
+  boton.addEventListener("click", async () => {
+    boton.disabled = true;
+    mostrarMensaje("");
+
+    try {
+      const resultado = await rest.confirmarCuenta(token);
+
+      token = null;
+      seccion.hidden = true;
+      mostrarAcceso();
+      mostrarMensaje(resultado.mensaje);
+    } catch (error) {
+      mostrarMensaje(error.message, true);
+    } finally {
+      boton.disabled = false;
+    }
+  });
+
+  return true;
+}
+
+if (!prepararConfirmacion()) {
+  comprobarSesion();
+}
