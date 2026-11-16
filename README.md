@@ -445,6 +445,8 @@ Las credenciales configuradas deben pertenecer al mismo cliente OAuth.
 - Debe resolverse la configuración de red de Atlas antes de que
   caduque esa entrada para evitar una nueva pérdida de acceso.
 
-La entrada `0.0.0.0/0` permite intentar conexiones desde cualquier
-dirección IPv4, aunque siguen siendo necesarias las credenciales
-de MongoDB.
+- El acceso de red de Atlas para Cloud Run utiliza una entrada
+  permanente `0.0.0.0/0`, sin caducidad.
+- Esta configuración permite conexiones desde cualquier IPv4,
+  aunque exige credenciales de MongoDB. Queda pendiente restringir
+  el acceso de red en una futura mejora.
