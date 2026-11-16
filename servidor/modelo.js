@@ -104,6 +104,61 @@ class Sistema {
 
     return this.usuarioPublico(usuario);
   }
+    // Recibe una identidad previamente verificada por el servidor.
+  async loginGoogle(identidad) {
+    if (
+      !identidad ||
+      typeof identidad.sub !== "string" ||
+      identidad.sub.trim() === "" ||
+      identidad.email_verified !== true
+    ) {
+      throw new ErrorNegocio(
+        "No se ha podido verificar la cuenta de Google",
+        401
+      );
+    }
+
+    const email = this.normalizarEmail(identidad.email);
+    const googleSub = identidad.sub;
+
+    const vinculado = await this.cad.buscarPorGoogleSub(
+      googleSub
+    );
+
+    if (vinculado) {
+      if (vinculado.estado !== "activo") {
+        throw new ErrorNegocio(
+          "Esta cuenta no tiene permitido iniciar sesión",
+          403
+        );
+      }
+
+      // Conserva el email y el rol almacenados en la aplicación.
+      return this.usuarioPublico(vinculado);
+    }
+
+    const existente = await this.cad.buscarPorEmail(email);
+
+    if (existente) {
+      throw new ErrorNegocio(
+        "Ya existe una cuenta con este correo. " +
+        "Utiliza su método de acceso original.",
+        409
+      );
+    }
+
+    const usuario = {
+      id: randomUUID(),
+      email,
+      googleSub,
+      rol: "usuario",
+      estado: "activo"
+    };
+
+    await this.cad.guardar(usuario);
+
+    return this.usuarioPublico(usuario);
+  }
 
   async loginUsuario(email, password) {
     const normalizado = this.normalizarEmail(email);

@@ -5,6 +5,7 @@ const { Sistema, ErrorNegocio } = require("./modelo");
 const { CadMemoria } = require("./cadMemoria");
 const { crearSesion } = require("./sesion");
 const { registroActividad } = require("./registroActividad");
+const { crearAccesoGoogle } = require("./accesoGoogle");
 
 function crearApp(
   sistema = new Sistema(new CadMemoria()),
@@ -12,7 +13,8 @@ function crearApp(
     secret = process.env.SESSION_SECRET,
     produccion = process.env.NODE_ENV === "production",
     store,
-    correo
+    correo,
+    google
   } = {}
 ) {
   const app = express();
@@ -40,6 +42,8 @@ function crearApp(
     res.set("Cache-Control", "no-store");
     next();
   });
+
+  app.use("/api", crearAccesoGoogle(sistema, google));
 
   app.use("/api", crearApi(sistema, {
   produccion,

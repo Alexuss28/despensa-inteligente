@@ -8,6 +8,7 @@ const {
   prepararCuentaPrueba,
 } = require("./servidor/cuentaPrueba");
 const { crearCorreo } = require("./servidor/correo");
+const { crearGoogle } = require("./servidor/google");
 async function arrancar() {
   let cad;
 
@@ -47,12 +48,14 @@ async function arrancar() {
     await prepararCuentaPrueba(sistema, cad, process.env);
 
     const correo = crearCorreo(process.env);
+    const google = crearGoogle(process.env);
 
     const app = crearApp(sistema, {
       secret,
       produccion: process.env.NODE_ENV === "production",
       store,
-      correo
+      correo,
+      google
     });
 
     const puerto = process.env.PORT || 3000;
