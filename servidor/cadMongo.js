@@ -73,6 +73,27 @@ class CadMongo {
       .find({}, { projection: { _id: 0 } })
       .toArray();
   }
+    async confirmarCuenta(tokenHash, ahora) {
+    return this.usuarios.findOneAndUpdate(
+      {
+        estado: "pendiente",
+        confirmacionTokenHash: tokenHash,
+        confirmacionCaducaEn: { $gt: ahora }
+      },
+      {
+        $set: { estado: "activo" },
+        $unset: {
+          confirmacionTokenHash: "",
+          confirmacionCaducaEn: ""
+        }
+      },
+      {
+        returnDocument: "after",
+        includeResultMetadata: false,
+        projection: { _id: 0 }
+      }
+    );
+  }
 
   async cerrar() {
     await this.cliente.close();

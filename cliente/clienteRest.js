@@ -44,4 +44,7 @@ class ClienteRest {
     listarUsuarios() {
     return this.solicitar("/usuarios");
   }
+    confirmarCuenta(token) {
+    return this.solicitar("/confirmar-cuenta", "POST", { token });
+  }
 }

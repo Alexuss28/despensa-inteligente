@@ -12,7 +12,12 @@ function preparar() {
 
   const app = crearApp(sistema, {
     secret: randomBytes(32).toString("hex"),
-    produccion: false
+    produccion: false,
+    correo: {
+      async enviarConfirmacion() {
+        // Correo simulado: las pruebas no envían mensajes reales.
+      }
+    }
   });
 
   return { app, cad, sistema };
