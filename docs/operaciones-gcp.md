@@ -42,6 +42,10 @@ desplegando en Cloud Run cada cambio que se fusiona en `main`.
    y `CUENTA`). Copiarlos en el bloque `env` del flujo, en lugar de
    `PENDIENTE`. No son secretos.
 
+Estado actual: configuración realizada el 17/11/2026 en el proyecto
+`despensa-inteligente-511418` (número `599179699590`). Los valores
+ya están en el flujo.
+
 ## Operaciones
 
 Se lanzan desde la pestaña **Actions → Operaciones Google Cloud → Run

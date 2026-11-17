@@ -35,9 +35,9 @@ concurrency:
 
 env:
   # Valores que imprime infra/configurar-gcp.sh (no son secretos).
-  PROYECTO_ID: "PENDIENTE"
-  PROVEEDOR_WIF: "PENDIENTE"
-  CUENTA_SERVICIO: "PENDIENTE"
+  PROYECTO_ID: "despensa-inteligente-511418"
+  PROVEEDOR_WIF: "projects/599179699590/locations/global/workloadIdentityPools/github/providers/despensa-repo"
+  CUENTA_SERVICIO: "github-operaciones@despensa-inteligente-511418.iam.gserviceaccount.com"
 
   REGION: europe-west1
   SERVICIO: despensa-inteligente
