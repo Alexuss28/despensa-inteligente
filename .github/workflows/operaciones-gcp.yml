@@ -1,0 +1,191 @@
+name: Operaciones Google Cloud
+
+# Operaciones de mantenimiento sobre Google Cloud, lanzadas a mano
+# (pestaña Actions de GitHub o API) y solo desde la rama main.
+# La autenticación usa Workload Identity Federation: no hay claves.
+# Configuración inicial: infra/configurar-gcp.sh y docs/operaciones-gcp.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      operacion:
+        description: "Operación"
+        required: true
+        default: estado
+        type: choice
+        options:
+          - estado
+          - configurar-avisos
+          - rotar-token-avisos
+          - ejecutar-avisos
+      horario:
+        description: "Horario de los avisos (cron, hora de España)"
+        required: false
+        default: "0 8 * * *"
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+# Nunca dos operaciones a la vez.
+concurrency:
+  group: operaciones-gcp
+  cancel-in-progress: false
+
+env:
+  # Valores que imprime infra/configurar-gcp.sh (no son secretos).
+  PROYECTO_ID: "PENDIENTE"
+  PROVEEDOR_WIF: "PENDIENTE"
+  CUENTA_SERVICIO: "PENDIENTE"
+
+  REGION: europe-west1
+  SERVICIO: despensa-inteligente
+  SECRETO: tareas-token
+  TAREA: avisos-caducidad
+  ZONA_HORARIA: Europe/Madrid
+  # Las entradas se usan siempre a través de variables de entorno,
+  # nunca insertadas en los scripts.
+  OPERACION: ${{ inputs.operacion }}
+  HORARIO: ${{ inputs.horario }}
+
+jobs:
+  operacion:
+    name: ${{ inputs.operacion }}
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
+
+    steps:
+      - name: Comprobar la configuración
+        run: |
+          if [ "$PROYECTO_ID" = "PENDIENTE" ]; then
+            echo "::error::Falta configurar el flujo. Ejecuta infra/configurar-gcp.sh y rellena los valores de env."
+            exit 1
+          fi
+
+          if ! printf '%s' "$HORARIO" | grep -Eq '^[0-9*/,-]+( [0-9*/,-]+){4}$'; then
+            echo "::error::El horario no es una expresión cron válida."
+            exit 1
+          fi
+
+      - name: Autenticarse en Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.PROVEEDOR_WIF }}
+          service_account: ${{ env.CUENTA_SERVICIO }}
+
+      - name: Preparar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROYECTO_ID }}
+
+      - name: Crear o rotar el token de las tareas
+        if: inputs.operacion == 'configurar-avisos' || inputs.operacion == 'rotar-token-avisos'
+        run: |
+          if ! gcloud secrets describe "$SECRETO" >/dev/null 2>&1; then
+            echo "Creando el secreto $SECRETO"
+            openssl rand -hex 32 | tr -d '\n' | \
+              gcloud secrets create "$SECRETO" \
+                --replication-policy=automatic \
+                --data-file=-
+          elif [ "$OPERACION" = "rotar-token-avisos" ]; then
+            echo "Añadiendo una versión nueva del secreto $SECRETO"
+            openssl rand -hex 32 | tr -d '\n' | \
+              gcloud secrets versions add "$SECRETO" --data-file=-
+          else
+            echo "El secreto $SECRETO ya existe; se conserva"
+          fi
+
+      - name: Dar acceso al secreto a Cloud Run y desplegar
+        if: inputs.operacion == 'configurar-avisos' || inputs.operacion == 'rotar-token-avisos'
+        run: |
+          CUENTA_RUN="$(gcloud run services describe "$SERVICIO" --region "$REGION" \
+            --format='value(spec.template.spec.serviceAccountName)')"
+
+          if [ -z "$CUENTA_RUN" ]; then
+            NUMERO="$(gcloud projects describe "$PROYECTO_ID" --format='value(projectNumber)')"
+            CUENTA_RUN="${NUMERO}-compute@developer.gserviceaccount.com"
+          fi
+
+          gcloud secrets add-iam-policy-binding "$SECRETO" \
+            --member "serviceAccount:$CUENTA_RUN" \
+            --role roles/secretmanager.secretAccessor \
+            --quiet >/dev/null
+
+          # La etiqueta fuerza una revisión nueva, que lee la última
+          # versión del secreto. El resto de la configuración se conserva.
+          gcloud run services update "$SERVICIO" \
+            --region "$REGION" \
+            --update-secrets "TAREAS_TOKEN=${SECRETO}:latest" \
+            --update-labels "token-aplicado=$(date -u +%Y%m%d%H%M%S)" \
+            --quiet
+
+      - name: Crear o actualizar la tarea programada
+        if: inputs.operacion == 'configurar-avisos' || inputs.operacion == 'rotar-token-avisos'
+        run: |
+          TOKEN="$(gcloud secrets versions access latest --secret "$SECRETO")"
+          echo "::add-mask::$TOKEN"
+
+          URL="$(gcloud run services describe "$SERVICIO" --region "$REGION" \
+            --format='value(status.url)')"
+          DESTINO="${URL}/api/tareas/avisos-caducidad"
+
+          if gcloud scheduler jobs describe "$TAREA" --location "$REGION" >/dev/null 2>&1; then
+            gcloud scheduler jobs update http "$TAREA" \
+              --location "$REGION" \
+              --schedule "$HORARIO" \
+              --time-zone "$ZONA_HORARIA" \
+              --uri "$DESTINO" \
+              --http-method POST \
+              --update-headers "Authorization=Bearer ${TOKEN}" \
+              --attempt-deadline 120s \
+              --max-retry-attempts 2 \
+              --quiet
+          else
+            gcloud scheduler jobs create http "$TAREA" \
+              --location "$REGION" \
+              --schedule "$HORARIO" \
+              --time-zone "$ZONA_HORARIA" \
+              --uri "$DESTINO" \
+              --http-method POST \
+              --headers "Authorization=Bearer ${TOKEN}" \
+              --attempt-deadline 120s \
+              --max-retry-attempts 2 \
+              --description "Avisos de caducidad de Despensa Inteligente" \
+              --quiet
+          fi
+
+      - name: Ejecutar ahora los avisos
+        if: inputs.operacion == 'ejecutar-avisos'
+        run: gcloud scheduler jobs run "$TAREA" --location "$REGION"
+
+      - name: Resumen del estado
+        if: always() && steps.auth.outcome == 'success'
+        run: |
+          {
+            echo "## Operación: $OPERACION"
+            echo ""
+            echo "### Cloud Run"
+            echo '```'
+            gcloud run services describe "$SERVICIO" --region "$REGION" \
+              --format='table(status.url, status.latestReadyRevisionName)' \
+              2>&1 || echo "No disponible"
+            echo '```'
+
+            if gcloud run services describe "$SERVICIO" --region "$REGION" --format=json 2>/dev/null \
+              | grep -q '"name": "TAREAS_TOKEN"'; then
+              echo "- \`TAREAS_TOKEN\`: configurado desde Secret Manager"
+            else
+              echo "- \`TAREAS_TOKEN\`: no configurado"
+            fi
+
+            echo ""
+            echo "### Tarea programada"
+            echo '```'
+            gcloud scheduler jobs describe "$TAREA" --location "$REGION" \
+              --format='table(schedule, timeZone, state, lastAttemptTime, status.code:label=ULTIMO_ERROR)' \
+              2>&1 || echo "No existe todavía"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
