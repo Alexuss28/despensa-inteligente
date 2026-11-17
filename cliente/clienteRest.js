@@ -54,4 +54,41 @@ class ClienteRest {
       { email }
     );
   }
+
+  // Alimentos de la despensa
+  listarAlimentos() {
+    return this.solicitar("/alimentos");
+  }
+
+  crearAlimento(alimento) {
+    return this.solicitar("/alimentos", "POST", alimento);
+  }
+
+  actualizarAlimento(id, alimento) {
+    return this.solicitar(
+      `/alimentos/${encodeURIComponent(id)}`,
+      "PUT",
+      alimento
+    );
+  }
+
+  eliminarAlimento(id) {
+    return this.solicitar(
+      `/alimentos/${encodeURIComponent(id)}`,
+      "DELETE"
+    );
+  }
+
+  // Google One Tap
+  prepararOneTap() {
+    return this.solicitar("/auth/google/one-tap");
+  }
+
+  accederOneTap(credential) {
+    return this.solicitar(
+      "/auth/google/one-tap",
+      "POST",
+      { credential }
+    );
+  }
 }

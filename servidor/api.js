@@ -211,6 +211,55 @@ function crearApi(
     }
   });
 
+  // ---------------------------------------------------------------
+  // Alimentos de la despensa del usuario que ha iniciado sesión.
+  // ---------------------------------------------------------------
+
+  router.get("/alimentos", async (req, res, next) => {
+    try {
+      res.json(await sistema.listarAlimentos(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/alimentos", async (req, res, next) => {
+    try {
+      const alimento = await sistema.crearAlimento(
+        req.session.email,
+        req.body
+      );
+
+      res.status(201).json({ alimento });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.put("/alimentos/:id", async (req, res, next) => {
+    try {
+      const alimento = await sistema.actualizarAlimento(
+        req.session.email,
+        req.params.id,
+        req.body
+      );
+
+      res.json({ alimento });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete("/alimentos/:id", async (req, res, next) => {
+    try {
+      res.json(
+        await sistema.eliminarAlimento(req.session.email, req.params.id)
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 

@@ -6,6 +6,47 @@ class CadMongo {
     this.cliente = cliente;
     this.baseDatos = baseDatos;
     this.usuarios = baseDatos.collection("usuarios");
+    this.alimentos = baseDatos.collection("alimentos");
+  }
+
+  // Crea un índice si no existe. Si ya hay uno equivalente creado
+  // con otro nombre u opciones (por ejemplo, desde Atlas), lo conserva.
+  static async asegurarIndice(coleccion, claves, opciones) {
+    try {
+      await coleccion.createIndex(claves, opciones);
+    } catch (error) {
+      // 85: IndexOptionsConflict, 86: IndexKeySpecsConflict
+      if (error.code === 85 || error.code === 86) {
+        return;
+      }
+
+      throw error;
+    }
+  }
+
+  async crearIndices() {
+    await CadMongo.asegurarIndice(
+      this.usuarios,
+      { email: 1 },
+      { unique: true }
+    );
+
+    await CadMongo.asegurarIndice(
+      this.usuarios,
+      { googleSub: 1 },
+      {
+        unique: true,
+        partialFilterExpression: {
+          googleSub: { $type: "string" }
+        }
+      }
+    );
+
+    await CadMongo.asegurarIndice(
+      this.alimentos,
+      { usuarioId: 1, id: 1 },
+      { unique: true }
+    );
   }
 
   static async conectar(uri, nombreBaseDatos) {
@@ -26,15 +67,7 @@ class CadMongo {
 
       const cad = new CadMongo(cliente, baseDatos);
 
-          await cad.usuarios.createIndex(
-      { googleSub: 1 },
-      {
-        unique: true,
-        partialFilterExpression: {
-          googleSub: { $type: "string" }
-        }
-      }
-    );
+      await cad.crearIndices();
 
       return cad;
     } catch (error) {
@@ -137,6 +170,44 @@ class CadMongo {
     );
 
     return resultado.modifiedCount === 1;
+  }
+
+  // ---------------------------------------------------------------
+  // Alimentos. Todas las consultas filtran por el propietario.
+  // ---------------------------------------------------------------
+
+  async listarAlimentos(usuarioId) {
+    return this.alimentos
+      .find({ usuarioId }, { projection: { _id: 0 } })
+      .toArray();
+  }
+
+  async contarAlimentos(usuarioId) {
+    return this.alimentos.countDocuments({ usuarioId });
+  }
+
+  async buscarAlimento(usuarioId, id) {
+    return this.alimentos.findOne(
+      { usuarioId, id },
+      { projection: { _id: 0 } }
+    );
+  }
+
+  async guardarAlimento(alimento) {
+    const { _id, ...datos } = alimento;
+
+    await this.alimentos.replaceOne(
+      { usuarioId: datos.usuarioId, id: datos.id },
+      datos,
+      { upsert: true }
+    );
+
+    return { ...datos };
+  }
+
+  async eliminarAlimento(usuarioId, id) {
+    const resultado = await this.alimentos.deleteOne({ usuarioId, id });
+    return resultado.deletedCount === 1;
   }
 }
 

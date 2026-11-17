@@ -26,6 +26,16 @@ function identificarOperacion(req) {
     return "completar_acceso_google";
   }
 
+  if (ruta === "/auth/google/one-tap") {
+    return "acceso_google_one_tap";
+  }
+
+  if (ruta === "/alimentos") return "alimentos";
+
+  if (/^\/alimentos\/[^/]+\/?$/.test(ruta)) {
+    return "operacion_alimento";
+  }
+
   if (/^\/usuarios\/[^/]+\/activo\/?$/.test(ruta)) {
     return "consultar_usuario_activo";
   }

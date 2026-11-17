@@ -7,6 +7,8 @@
   <title>Despensa Inteligente</title>
   <link rel="stylesheet" href="/estilos.css">
   <script src="/clienteRest.js" defer></script>
+  <script src="/despensa.js" defer></script>
+  <script src="/googleOneTap.js" defer></script>
   <script src="/controlWeb.js" defer></script>
 </head>
 
@@ -56,9 +58,12 @@
           <input id="registro-email" type="email" autocomplete="username" required>
 
           <label for="registro-password">Contraseña</label>
-          <input id="registro-password" type="password" autocomplete="new-password" minlength="8" required>
+          <input id="registro-password" type="password" autocomplete="new-password" minlength="8" maxlength="72" aria-describedby="ayuda-password" required>
 
-          <p class="ayuda">Utiliza al menos 8 caracteres.</p>
+          <p id="ayuda-password" class="ayuda">Utiliza al menos 8 caracteres.</p>
+
+          <label for="registro-password-repetida">Repite la contraseña</label>
+          <input id="registro-password-repetida" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
 
           <button type="submit">Crear cuenta</button>
         </form>
@@ -83,18 +88,112 @@
       <h2>Mi despensa</h2>
       <p id="usuario"></p>
 
-      <p>
-        Tu cuenta está preparada. La gestión de alimentos
-        se incorporará en una próxima ampliación.
-      </p>
+      <div class="acciones-cuenta">
+        <button id="btn-admin" type="button" hidden>
+          Ver usuarios registrados
+        </button>
 
-      <button id="btn-admin" type="button" hidden>
-        Ver usuarios registrados
-      </button>
+        <button id="btn-salir" type="button" class="secundario">
+          Cerrar sesión
+        </button>
+      </div>
+    </section>
 
-      <button id="btn-salir" type="button">
-        Cerrar sesión
-      </button>
+    <section id="despensa" class="tarjeta" aria-labelledby="titulo-despensa" hidden>
+      <h2 id="titulo-despensa">Mis alimentos</h2>
+
+      <p id="resumen-despensa" role="status" aria-live="polite"></p>
+
+      <form id="form-alimento" novalidate>
+        <h3 id="titulo-form-alimento">Añadir alimento</h3>
+
+        <div class="campos-alimento">
+          <div class="campo campo-ancho">
+            <label for="alimento-nombre">Nombre</label>
+            <input id="alimento-nombre" type="text" maxlength="80" required>
+          </div>
+
+          <div class="campo">
+            <label for="alimento-cantidad">Cantidad</label>
+            <input id="alimento-cantidad" type="number" min="0" max="100000" step="any" value="1" required>
+          </div>
+
+          <div class="campo">
+            <label for="alimento-unidad">Unidad</label>
+            <select id="alimento-unidad">
+              <option value="unidades">unidades</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">l</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="alimento-categoria">Categoría</label>
+            <select id="alimento-categoria">
+              <option value="fruta y verdura">Fruta y verdura</option>
+              <option value="carne y pescado">Carne y pescado</option>
+              <option value="lácteos y huevos">Lácteos y huevos</option>
+              <option value="panadería">Panadería</option>
+              <option value="despensa seca">Despensa seca</option>
+              <option value="congelados">Congelados</option>
+              <option value="bebidas">Bebidas</option>
+              <option value="otros" selected>Otros</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="alimento-caducidad">Caduca el (opcional)</label>
+            <input id="alimento-caducidad" type="date" min="2000-01-01" max="2100-12-31">
+          </div>
+        </div>
+
+        <p id="error-alimento" class="error" role="alert"></p>
+
+        <div class="acciones-formulario">
+          <button id="btn-guardar-alimento" type="submit">Añadir</button>
+          <button id="btn-cancelar-edicion" type="button" class="secundario" hidden>
+            Cancelar edición
+          </button>
+        </div>
+      </form>
+
+      <div class="filtros-despensa">
+        <div class="campo">
+          <label for="filtro-texto">Buscar</label>
+          <input id="filtro-texto" type="search" placeholder="Nombre del alimento">
+        </div>
+
+        <div class="campo">
+          <label for="filtro-estado">Mostrar</label>
+          <select id="filtro-estado">
+            <option value="todos">Todos</option>
+            <option value="atencion">Caducados o próximos a caducar</option>
+            <option value="caducado">Solo caducados</option>
+          </select>
+        </div>
+      </div>
+
+      <p id="estado-despensa" role="status" aria-live="polite"></p>
+
+      <div class="tabla-contenedor">
+        <table id="tabla-alimentos" hidden>
+          <caption>Alimentos de tu despensa</caption>
+
+          <thead>
+            <tr>
+              <th scope="col">Alimento</th>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Categoría</th>
+              <th scope="col">Caducidad</th>
+              <th scope="col"><span class="solo-lector">Acciones</span></th>
+            </tr>
+          </thead>
+
+          <tbody id="filas-alimentos"></tbody>
+        </table>
+      </div>
     </section>
 
     <section id="panel-admin" class="tarjeta" aria-labelledby="titulo-admin" hidden>

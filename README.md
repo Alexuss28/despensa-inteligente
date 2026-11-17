@@ -13,11 +13,16 @@ y HTML, CSS y JavaScript en el cliente.
 Se organiza en capas y componentes:
 
 - `cliente/`: interfaz y consultas a la API mediante fetch.
+  - `controlWeb.js`: control de la página, acceso y panel de administración.
+  - `clienteRest.js`: peticiones a la API.
+  - `despensa.js`: listado, alta, edición, filtros y borrado de alimentos.
+  - `googleOneTap.js`: diálogo de acceso con Google One Tap.
 - `servidor/api.js`: rutas HTTP de usuarios, autenticación y confirmación.
 - `servidor/accesoGoogle.js`: rutas de inicio y retorno del acceso con Google.
 - `servidor/google.js`: comunicación con Google y verificación de identidad.
 - `servidor/modelo.js`: reglas de negocio y comprobación de permisos.
-- `servidor/cadMongo.js`: almacenamiento de usuarios en MongoDB Atlas.
+- `servidor/alimentos.js`: validación de alimentos y cálculo de caducidad.
+- `servidor/cadMongo.js`: almacenamiento de usuarios y alimentos en MongoDB Atlas.
 - `servidor/cadMemoria.js`: almacenamiento en memoria utilizado en las pruebas.
 - `servidor/confirmacion.js`: generación y resumen de tokens de confirmación.
 - `servidor/correo.js`: envío de correos mediante Nodemailer y Gmail.
@@ -100,6 +105,14 @@ esta URI de redireccionamiento local:
 http://localhost:3000/api/auth/google/callback
 ```
 
+Para el diálogo Google One Tap, el mismo cliente OAuth debe tener
+estos **orígenes autorizados de JavaScript**:
+
+```text
+http://localhost:3000
+http://localhost
+```
+
 `GOOGLE_CLIENT_ID` es el identificador que termina en
 `.apps.googleusercontent.com`. Es diferente de `GOOGLE_CLIENT_SECRET`.
 
@@ -135,6 +148,8 @@ En otros terminales puede utilizarse `npm` en lugar de `npm.cmd`.
 | `SMTP_PASSWORD` | Contraseña de aplicación de la cuenta Gmail. |
 | `GOOGLE_CLIENT_ID` | Identificador del cliente OAuth de Google. |
 | `GOOGLE_CLIENT_SECRET` | Secreto del cliente OAuth de Google. |
+| `MONGODB_URI_TEST` | Opcional. Cadena de conexión para las pruebas de integración. |
+| `MONGODB_DB_TEST` | Opcional. Base de las pruebas de integración (por defecto `despensa_inteligente_test`). |
 
 `.env` contiene configuración privada y no se sube al repositorio.
 `.env.example` documenta las variables sin credenciales reales.
@@ -205,10 +220,70 @@ otro método, debe utilizarse su método de acceso original.
 
 Las cuentas creadas mediante Google no reciben una contraseña local.
 
+### Sprint 2: gestión de alimentos, Google One Tap y mejoras
+
+Como referencia se ha utilizado el Sprint 2 del tutorial
+«Arquitectura base de una aplicación SaaS» (curso 2023-2024).
+La mayor parte de ese sprint ya estaba cubierta por los hitos 2 a 4;
+este sprint completa los apartados pendientes y añade la funcionalidad
+principal de la aplicación.
+
+| Apartado del tutorial | Implementación en este proyecto |
+|---|---|
+| 2.1 Estado de la aplicación | Hito 2–3: express-session y connect-mongo |
+| 2.2 OAuth con Google | Hito 4: flujo de código con PKCE, `state` y `nonce` |
+| 2.3 Capa de acceso a datos | `cadMongo.js` y `cadMemoria.js`; nueva colección `alimentos` |
+| 2.4 Google One Tap | **Sprint 2**: `googleOneTap.js` y `/api/auth/google/one-tap` |
+| 2.5 Registro e inicio de sesión locales | Hito 2 |
+| 2.6 Confirmación de cuenta | Hito 4; **Sprint 2**: correo en HTML |
+| 2.7 Cifrado de claves | Hito 2: bcrypt |
+| 2.8 y 2.9 Rutas protegidas y salida | Hito 2–3 |
+| 2.10 Mejoras de formularios y mensajes | **Sprint 2**: validación en el cliente, confirmación de contraseña y errores de Google comprensibles |
+| Pruebas de integración lógica + CAD | **Sprint 2**: `test/integracion/cadMongo.test.js` |
+
+Gestión de alimentos:
+
+- Cada usuario tiene su propia despensa; nadie puede ver ni modificar
+  los alimentos de otro usuario.
+- Datos de cada alimento: nombre, cantidad, unidad (`unidades`, `g`,
+  `kg`, `ml`, `l`), categoría y fecha de caducidad opcional.
+- Estado de caducidad calculado en el servidor con la fecha de España:
+  `caducado`, `proximo` (3 días o menos), `vigente` o `sin_fecha`.
+- Listado ordenado por caducidad, con resumen de caducados y próximos.
+- Alta, edición y eliminación desde la interfaz, con confirmación
+  antes de borrar.
+- Búsqueda por nombre y filtro de alimentos caducados o próximos.
+- Validación en el cliente y de nuevo en el servidor.
+- Límite de 500 alimentos por usuario.
+- Vista en tarjetas en pantallas estrechas.
+
+Google One Tap:
+
+- El servidor entrega un `nonce` de un solo uso guardado en la sesión.
+- El navegador muestra el diálogo de Google y envía el ID token al servidor.
+- El servidor verifica la firma, la audiencia, el `nonce` y el correo
+  verificado antes de crear la sesión.
+- Utiliza las mismas reglas de cuentas que el acceso con Google existente.
+- Si Google no está configurado, el diálogo simplemente no aparece.
+
+Otras mejoras:
+
+- Los errores del acceso con Google redirigen a la página inicial
+  con un mensaje comprensible en lugar de mostrar JSON.
+- El correo de confirmación incluye una versión HTML con botón,
+  además de la versión de texto.
+- El formulario de registro pide repetir la contraseña.
+- `CadMongo` crea los índices de `usuarios` y `alimentos` al conectar
+  y conserva los que ya existan con otras opciones.
+
 ## Persistencia
 
-Los usuarios y las sesiones se almacenan en las colecciones `usuarios`
-y `sesiones` de la base `despensa_inteligente`.
+Los usuarios, los alimentos y las sesiones se almacenan en las
+colecciones `usuarios`, `alimentos` y `sesiones` de la base
+`despensa_inteligente`.
+
+Cada alimento guarda el `id` de su propietario en `usuarioId`.
+El índice único `{ usuarioId, id }` acelera las consultas por usuario.
 
 La persistencia permite conservar los datos tras reiniciar el servidor
 y compartirlos entre instancias.
@@ -229,11 +304,17 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | POST | `/api/login` | Público |
 | GET | `/api/auth/google` | Público; inicia el acceso con Google |
 | GET | `/api/auth/google/callback` | Público; valida el retorno de Google |
+| GET | `/api/auth/google/one-tap` | Público; prepara Google One Tap |
+| POST | `/api/auth/google/one-tap` | Público; verifica el ID token de One Tap |
 | POST | `/api/logout` | Cierre de sesión |
 | GET | `/api/sesion` | Usuario autenticado |
 | GET | `/api/usuarios` | Administrador |
 | GET | `/api/usuarios/:email/activo` | Administrador |
 | DELETE | `/api/usuarios/:email` | Administrador o propietario de la cuenta |
+| GET | `/api/alimentos` | Usuario autenticado; solo sus alimentos |
+| POST | `/api/alimentos` | Usuario autenticado |
+| PUT | `/api/alimentos/:id` | Propietario del alimento |
+| DELETE | `/api/alimentos/:id` | Propietario del alimento |
 | POST | `/api/prueba/bloqueo` | Público; ejercicio técnico de cálculo de bloqueo |
 
 ### Registro y confirmación
@@ -280,7 +361,70 @@ Google devuelve al usuario a `/api/auth/google/callback`.
 El servidor valida la respuesta antes de crear una sesión y redirige
 a la página inicial cuando el acceso termina correctamente.
 
-Los errores se devuelven actualmente en formato JSON.
+Si el acceso falla, el servidor redirige a `/#error-google=<código>`
+y la página muestra un mensaje. Los códigos son `cancelado`,
+`no_disponible`, `cuenta_existente`, `cuenta_no_permitida` y `fallo`.
+No se envían detalles internos al navegador.
+
+### Google One Tap
+
+`GET /api/auth/google/one-tap` devuelve `{ disponible: false }` si
+Google no está configurado. En caso contrario devuelve:
+
+```json
+{
+  "disponible": true,
+  "clientId": "ID_DE_CLIENTE.apps.googleusercontent.com",
+  "nonce": "VALOR_DE_UN_SOLO_USO"
+}
+```
+
+`POST /api/auth/google/one-tap` recibe `{ "credential": "ID_TOKEN" }`.
+El `nonce` se consume en el primer intento, tanto si es correcto como si no.
+
+### Alimentos
+
+`POST /api/alimentos` y `PUT /api/alimentos/:id` reciben:
+
+```json
+{
+  "nombre": "Leche entera",
+  "cantidad": 2,
+  "unidad": "l",
+  "categoria": "lácteos y huevos",
+  "fechaCaducidad": "2026-12-01"
+}
+```
+
+`unidad`, `categoria` y `fechaCaducidad` son opcionales
+(por defecto `unidades`, `otros` y sin fecha).
+
+Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
+`panadería`, `despensa seca`, `congelados`, `bebidas` y `otros`.
+
+`GET /api/alimentos` devuelve los alimentos y un resumen:
+
+```json
+{
+  "alimentos": [
+    {
+      "id": "…",
+      "nombre": "Leche entera",
+      "cantidad": 2,
+      "unidad": "l",
+      "categoria": "lácteos y huevos",
+      "fechaCaducidad": "2026-12-01",
+      "estadoCaducidad": "vigente",
+      "diasRestantes": 14,
+      "creadoEn": "…",
+      "actualizadoEn": "…"
+    }
+  ],
+  "resumen": { "total": 1, "caducados": 0, "proximos": 0 }
+}
+```
+
+Un alimento inexistente o de otro usuario devuelve 404.
 
 ### Cálculo de bloqueo
 
@@ -308,11 +452,42 @@ Ejecutar:
 npm.cmd test
 ```
 
-En la última validación se aprobaron 71 pruebas automatizadas.
+En la última validación se aprobaron 105 pruebas automatizadas
+(71 anteriores y 34 del Sprint 2).
 
 Cubren lógica de negocio, autenticación, sesiones, API, entrega del
-frontend, permisos, confirmación, reenvío, acceso con Google
+frontend, permisos, confirmación, reenvío, acceso con Google,
+Google One Tap, correo de confirmación, gestión de alimentos
 y el ejercicio técnico de bloqueo.
+
+Las pruebas de alimentos comprueban, entre otros casos:
+
+- Validación de nombre, cantidad, unidad, categoría y fecha.
+- Cálculo de la caducidad con la fecha de España.
+- Orden por caducidad y resumen de caducados y próximos.
+- Aislamiento entre usuarios: otro usuario recibe 404.
+- Acceso denegado sin sesión o tras cerrarla.
+
+Las pruebas de One Tap comprueban la audiencia y el `nonce` del token,
+el rechazo de correos no verificados, firmas no válidas e intentos
+caducados, y que el `nonce` no se pueda reutilizar.
+
+### Pruebas de integración con MongoDB
+
+`test/integracion/cadMongo.test.js` prueba la capa lógica junto con
+`CadMongo` sobre una base real: índices, registro, confirmación,
+inicio de sesión, reenvío, acceso con Google y alimentos.
+
+Se omiten si no se define `MONGODB_URI_TEST`. Para ejecutarlas:
+
+```powershell
+npm.cmd run test:integracion
+```
+
+Utilizan la base `MONGODB_DB_TEST` (por defecto
+`despensa_inteligente_test`) y vacían sus colecciones antes y después.
+Se niegan a ejecutarse sobre la base de `MONGODB_DB`.
+El usuario de Atlas necesita el rol `readWrite` sobre la base de pruebas.
 
 Las pruebas de Google comprueban, entre otros casos:
 
@@ -326,15 +501,14 @@ Las pruebas de Google comprueban, entre otros casos:
 - Rechazo de retornos sin intento previo.
 - Rechazo de un estado incorrecto en el componente simulado.
 - Consumo del intento cuando el acceso se cancela.
-- Respuesta 503 cuando Google no está configurado.
+- Redirección con aviso cuando Google no está configurado.
 
 Las pruebas HTTP de Google utilizan un componente simulado:
 no contactan con Google ni requieren credenciales reales.
 No constituyen una comprobación criptográfica de tokens reales.
 
-Las pruebas de negocio y HTTP utilizan almacenamiento en memoria.
-No modifican Atlas ni sustituyen las pruebas de integración
-con MongoDB y los proveedores externos.
+Las pruebas de negocio y HTTP utilizan almacenamiento en memoria
+y no modifican Atlas.
 
 GitHub Actions ejecuta las pruebas en los pull requests hacia `main`
 y en los cambios integrados en `main`.
@@ -356,6 +530,24 @@ y en los cambios integrados en `main`.
 - Conservación de la sesión al recargar tras acceder con Google.
 - Cierre de sesión y nuevo acceso con Google.
 - Compilación y despliegue de las ampliaciones mediante Cloud Build.
+
+### Comprobaciones del Sprint 2
+
+Realizadas con un navegador automatizado sobre el servidor con
+almacenamiento en memoria y Google simulado:
+
+- Alta, edición, filtros, búsqueda y eliminación de alimentos.
+- Resumen de caducados y próximos, y resaltado de las filas.
+- Conservación de la despensa al recargar y limpieza al cerrar sesión.
+- Vista en tarjetas en pantallas estrechas.
+- Mensaje comprensible ante un error del acceso con Google.
+- Aviso cuando las contraseñas del registro no coinciden.
+- Inicio de sesión con One Tap y desactivación de la selección
+  automática al cerrar sesión.
+
+Pendiente de comprobar con servicios reales: One Tap con una cuenta
+de Google, las pruebas de integración contra Atlas y el despliegue
+en Cloud Run.
 
 ## Registros de actividad
 
@@ -427,19 +619,27 @@ http://localhost:3000/api/auth/google/callback
 https://despensa-inteligente-599179699590.europe-west1.run.app/api/auth/google/callback
 ```
 
+Para Google One Tap también deben estar autorizados los orígenes
+de JavaScript `http://localhost:3000`, `http://localhost` y
+`https://despensa-inteligente-599179699590.europe-west1.run.app`.
+
 Las credenciales configuradas deben pertenecer al mismo cliente OAuth.
 
 ## Limitaciones y tareas pendientes
 
-- La gestión de alimentos se desarrollará posteriormente.
 - La cuenta administrativa se prepara manualmente.
 - No se ha implementado la vinculación de una cuenta local con Google.
 - No se ha implementado la recuperación de contraseñas.
-- Los errores del flujo de Google se muestran actualmente como JSON.
 - El intervalo de reenvío se aplica por cuenta; no es un límite global
   de peticiones ni sustituye otras medidas contra el abuso.
-- Las pruebas automatizadas descritas no utilizan un MongoDB real
-  ni realizan llamadas a los proveedores de correo o Google.
+- Las pruebas automatizadas no realizan llamadas a los proveedores
+  de correo o Google. Las de MongoDB real solo se ejecutan si se
+  configura `MONGODB_URI_TEST`.
+- El estado de caducidad de los alimentos se calcula con la zona
+  horaria de España.
+- Con Google configurado, cada visita sin sesión crea una sesión
+  temporal para guardar el `nonce` de One Tap. Caduca con el resto
+  de sesiones.
 - El acceso de red de Atlas utilizado para Cloud Run se ha habilitado
   mediante una entrada temporal `0.0.0.0/0`.
 - Debe resolverse la configuración de red de Atlas antes de que

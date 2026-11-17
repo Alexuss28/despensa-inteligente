@@ -4,6 +4,12 @@ const {
   crearConfirmacion,
   resumirToken
 } = require("./confirmacion");
+const {
+  MAX_ALIMENTOS_POR_USUARIO,
+  estadoCaducidad,
+  validarDatosAlimento,
+  compararAlimentos
+} = require("./alimentos");
 
 class ErrorNegocio extends Error {
   constructor(mensaje, estadoHTTP) {
@@ -335,6 +341,142 @@ class Sistema {
       email: normalizado,
       token: confirmacion.token
     };
+  }
+
+  // ---------------------------------------------------------------
+  // Gestión de alimentos (Sprint 2)
+  // Cada alimento pertenece a un usuario y solo él puede consultarlo
+  // o modificarlo. El propietario se obtiene siempre de la sesión.
+  // ---------------------------------------------------------------
+
+  alimentoPublico(alimento, ahora = new Date()) {
+    const { estado, diasRestantes } = estadoCaducidad(
+      alimento.fechaCaducidad,
+      ahora
+    );
+
+    return {
+      id: alimento.id,
+      nombre: alimento.nombre,
+      cantidad: alimento.cantidad,
+      unidad: alimento.unidad,
+      categoria: alimento.categoria,
+      fechaCaducidad: alimento.fechaCaducidad,
+      estadoCaducidad: estado,
+      diasRestantes,
+      creadoEn: alimento.creadoEn,
+      actualizadoEn: alimento.actualizadoEn
+    };
+  }
+
+  validarAlimento(datos) {
+    const resultado = validarDatosAlimento(datos);
+
+    if (resultado.error) {
+      throw new ErrorNegocio(resultado.error, 400);
+    }
+
+    return resultado.datos;
+  }
+
+  validarIdAlimento(id) {
+    if (
+      typeof id !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        .test(id)
+    ) {
+      throw new ErrorNegocio("El alimento no existe", 404);
+    }
+
+    return id.toLowerCase();
+  }
+
+  async listarAlimentos(emailSolicitante, ahora = new Date()) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const alimentos = await this.cad.listarAlimentos(usuario.id);
+
+    const publicos = alimentos
+      .sort(compararAlimentos)
+      .map(alimento => this.alimentoPublico(alimento, ahora));
+
+    const resumen = {
+      total: publicos.length,
+      caducados: publicos.filter(a => a.estadoCaducidad === "caducado")
+        .length,
+      proximos: publicos.filter(a => a.estadoCaducidad === "proximo")
+        .length
+    };
+
+    return { alimentos: publicos, resumen };
+  }
+
+  async crearAlimento(emailSolicitante, datos, ahora = new Date()) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const limpio = this.validarAlimento(datos);
+
+    const total = await this.cad.contarAlimentos(usuario.id);
+
+    if (total >= MAX_ALIMENTOS_POR_USUARIO) {
+      throw new ErrorNegocio(
+        `No puedes guardar más de ${MAX_ALIMENTOS_POR_USUARIO} alimentos`,
+        409
+      );
+    }
+
+    const alimento = {
+      id: randomUUID(),
+      usuarioId: usuario.id,
+      ...limpio,
+      creadoEn: ahora,
+      actualizadoEn: ahora
+    };
+
+    await this.cad.guardarAlimento(alimento);
+
+    return this.alimentoPublico(alimento, ahora);
+  }
+
+  async actualizarAlimento(
+    emailSolicitante,
+    idAlimento,
+    datos,
+    ahora = new Date()
+  ) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const id = this.validarIdAlimento(idAlimento);
+    const limpio = this.validarAlimento(datos);
+
+    const existente = await this.cad.buscarAlimento(usuario.id, id);
+
+    if (!existente) {
+      throw new ErrorNegocio("El alimento no existe", 404);
+    }
+
+    const actualizado = {
+      ...existente,
+      ...limpio,
+      id: existente.id,
+      usuarioId: existente.usuarioId,
+      creadoEn: existente.creadoEn,
+      actualizadoEn: ahora
+    };
+
+    await this.cad.guardarAlimento(actualizado);
+
+    return this.alimentoPublico(actualizado, ahora);
+  }
+
+  async eliminarAlimento(emailSolicitante, idAlimento) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const id = this.validarIdAlimento(idAlimento);
+
+    const eliminado = await this.cad.eliminarAlimento(usuario.id, id);
+
+    if (!eliminado) {
+      throw new ErrorNegocio("El alimento no existe", 404);
+    }
+
+    return { mensaje: "Alimento eliminado" };
   }
 }
 function calcularBloqueo(fallos, ahora) {
