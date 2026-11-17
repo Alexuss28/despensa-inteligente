@@ -10,7 +10,9 @@ const {
   estadoCaducidad,
   validarDatosAlimento,
   compararAlimentos,
-  bajoMinimo
+  bajoMinimo,
+  UBICACIONES,
+  UBICACION_POR_DEFECTO
 } = require("./alimentos");
 const {
   MAX_ELEMENTOS_LISTA,
@@ -369,6 +371,7 @@ class Sistema {
       cantidad: alimento.cantidad,
       unidad: alimento.unidad,
       categoria: alimento.categoria,
+      ubicacion: alimento.ubicacion ?? UBICACION_POR_DEFECTO,
       fechaCaducidad: alimento.fechaCaducidad,
       stockMinimo: alimento.stockMinimo ?? null,
       bajoMinimo: bajoMinimo(alimento),
@@ -414,7 +417,13 @@ class Sistema {
       caducados: publicos.filter(a => a.estadoCaducidad === "caducado")
         .length,
       proximos: publicos.filter(a => a.estadoCaducidad === "proximo")
-        .length
+        .length,
+      porUbicacion: Object.fromEntries(
+        UBICACIONES.map(ubicacion => [
+          ubicacion,
+          publicos.filter(a => a.ubicacion === ubicacion).length
+        ])
+      )
     };
 
     return { alimentos: publicos, resumen };

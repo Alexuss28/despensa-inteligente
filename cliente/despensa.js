@@ -1,3 +1,9 @@
+const NOMBRES_UBICACION = {
+  nevera: "Nevera",
+  congelador: "Congelador",
+  despensa: "Despensa"
+};
+
 // Componente de la interfaz que gestiona los alimentos del usuario.
 // Recibe el cliente REST y dos funciones de ControlWeb para mostrar
 // mensajes generales y reaccionar si la sesión ha caducado.
@@ -12,6 +18,7 @@ class Despensa {
     this.alimentos = [];
     this.editandoId = null;
     this.version = 0;
+    this.ubicacionActiva = "todas";
 
     this.seccion = document.querySelector("#despensa");
     this.resumen = document.querySelector("#resumen-despensa");
@@ -30,6 +37,7 @@ class Despensa {
       cantidad: document.querySelector("#alimento-cantidad"),
       unidad: document.querySelector("#alimento-unidad"),
       categoria: document.querySelector("#alimento-categoria"),
+      ubicacion: document.querySelector("#alimento-ubicacion"),
       fechaCaducidad: document.querySelector("#alimento-caducidad"),
       stockMinimo: document.querySelector("#alimento-minimo")
     };
@@ -50,6 +58,14 @@ class Despensa {
     });
     this.filtroTexto.addEventListener("input", () => this.pintar());
     this.filtroEstado.addEventListener("change", () => this.pintar());
+
+    this.pestanas = [...document.querySelectorAll("#filtro-ubicacion .pestana")];
+
+    for (const pestana of this.pestanas) {
+      pestana.addEventListener("click", () =>
+        this.elegirUbicacion(pestana.dataset.ubicacion)
+      );
+    }
   }
 
   async mostrar() {
@@ -68,6 +84,7 @@ class Despensa {
     this.estado.textContent = "";
     this.filtroTexto.value = "";
     this.filtroEstado.value = "todos";
+    this.elegirUbicacion("todas", false);
     this.reiniciarFormulario();
   }
 
@@ -131,11 +148,41 @@ class Despensa {
     );
   }
 
+  elegirUbicacion(ubicacion, repintar = true) {
+    this.ubicacionActiva = ubicacion;
+
+    for (const pestana of this.pestanas) {
+      pestana.setAttribute(
+        "aria-pressed",
+        String(pestana.dataset.ubicacion === ubicacion)
+      );
+    }
+
+    if (repintar) this.pintar();
+  }
+
+  pintarContadores() {
+    const cuenta = ubicacion => ubicacion === "todas"
+      ? this.alimentos.length
+      : this.alimentos.filter(a => a.ubicacion === ubicacion).length;
+
+    for (const contador of document.querySelectorAll("#filtro-ubicacion [data-contador]")) {
+      contador.textContent = cuenta(contador.dataset.contador);
+    }
+  }
+
   filtrados() {
     const texto = this.filtroTexto.value.trim().toLocaleLowerCase("es");
     const estado = this.filtroEstado.value;
 
     return this.alimentos.filter(alimento => {
+      if (
+        this.ubicacionActiva !== "todas" &&
+        alimento.ubicacion !== this.ubicacionActiva
+      ) {
+        return false;
+      }
+
       if (texto && !alimento.nombre.toLocaleLowerCase("es").includes(texto)) {
         return false;
       }
@@ -161,6 +208,7 @@ class Despensa {
     }
 
     this.filas.replaceChildren(fragmento);
+    this.pintarContadores();
     this.tabla.hidden = visibles.length === 0;
     this.estado.className = "";
 
@@ -255,7 +303,12 @@ class Despensa {
     punto.className = "punto";
     punto.setAttribute("aria-hidden", "true");
 
-    nombre.append(punto, alimento.nombre);
+    const detalle = document.createElement("span");
+    detalle.className = "detalle-alimento";
+    detalle.textContent =
+      `${NOMBRES_UBICACION[alimento.ubicacion] ?? alimento.ubicacion} · ${alimento.categoria}`;
+
+    nombre.append(punto, alimento.nombre, detalle);
 
     const cantidad = this.crearCelda(
       `${alimento.cantidad} ${alimento.unidad}`,
@@ -272,7 +325,6 @@ class Despensa {
     fila.append(
       nombre,
       cantidad,
-      this.crearCelda(alimento.categoria, "Categoría"),
       caducidad,
       celdaAcciones
     );
@@ -348,6 +400,7 @@ class Despensa {
         cantidad,
         unidad,
         categoria: this.campos.categoria.value,
+        ubicacion: this.campos.ubicacion.value,
         fechaCaducidad: this.campos.fechaCaducidad.value || null,
         stockMinimo
       }
@@ -390,6 +443,7 @@ class Despensa {
     this.campos.cantidad.value = alimento.cantidad;
     this.campos.unidad.value = alimento.unidad;
     this.campos.categoria.value = alimento.categoria;
+    this.campos.ubicacion.value = alimento.ubicacion;
     this.campos.fechaCaducidad.value = alimento.fechaCaducidad || "";
     this.campos.stockMinimo.value =
       alimento.stockMinimo === null ? "" : alimento.stockMinimo;

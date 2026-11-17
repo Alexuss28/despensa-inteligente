@@ -155,6 +155,13 @@
 
       <div class="despensa-cuerpo">
         <div class="despensa-lista tarjeta">
+          <div id="filtro-ubicacion" class="pestanas" role="group" aria-label="Filtrar por ubicación">
+            <button type="button" class="pestana" data-ubicacion="todas" aria-pressed="true">Todo <span class="pestana-numero" data-contador="todas"></span></button>
+            <button type="button" class="pestana" data-ubicacion="nevera" aria-pressed="false">Nevera <span class="pestana-numero" data-contador="nevera"></span></button>
+            <button type="button" class="pestana" data-ubicacion="congelador" aria-pressed="false">Congelador <span class="pestana-numero" data-contador="congelador"></span></button>
+            <button type="button" class="pestana" data-ubicacion="despensa" aria-pressed="false">Despensa <span class="pestana-numero" data-contador="despensa"></span></button>
+          </div>
+
           <div class="filtros-despensa">
             <div class="campo">
               <label for="filtro-texto">Buscar</label>
@@ -181,7 +188,6 @@
                 <tr>
                   <th scope="col">Alimento</th>
                   <th scope="col">Cantidad</th>
-                  <th scope="col">Categoría</th>
                   <th scope="col">Caducidad</th>
                   <th scope="col"><span class="solo-lector">Acciones</span></th>
                 </tr>
@@ -215,6 +221,15 @@
                   <option value="kg">kg</option>
                   <option value="ml">ml</option>
                   <option value="l">l</option>
+                </select>
+              </div>
+
+              <div class="campo campo-ancho">
+                <label for="alimento-ubicacion">Dónde lo guardas</label>
+                <select id="alimento-ubicacion">
+                  <option value="nevera">Nevera</option>
+                  <option value="congelador">Congelador</option>
+                  <option value="despensa" selected>Despensa</option>
                 </select>
               </div>
 

@@ -332,6 +332,17 @@ Sin `TAREAS_TOKEN` (o con menos de 32 caracteres), la ruta devuelve 503.
 - Cada usuario solo ve y modifica su propia lista
   (máximo 200 productos añadidos a mano).
 
+### Sprint 3: ubicaciones
+
+- Cada alimento indica dónde se guarda: `nevera`, `congelador`
+  o `despensa` (por defecto).
+- Los alimentos creados antes de esta funcionalidad se tratan como
+  de la despensa, sin necesidad de migrar datos.
+- Pestañas para ver todo o solo una ubicación, con el número de
+  alimentos de cada una.
+- La ubicación y la categoría se muestran bajo el nombre del alimento.
+- El resumen de `GET /api/alimentos` incluye `porUbicacion`.
+
 ## Persistencia
 
 Los usuarios, los alimentos, la lista de la compra y las sesiones se
@@ -460,8 +471,8 @@ El `nonce` se consume en el primer intento, tanto si es correcto como si no.
 }
 ```
 
-`unidad`, `categoria` y `fechaCaducidad` son opcionales
-(por defecto `unidades`, `otros` y sin fecha).
+`unidad`, `categoria`, `ubicacion` y `fechaCaducidad` son opcionales
+(por defecto `unidades`, `otros`, `despensa` y sin fecha).
 
 Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
 `panadería`, `despensa seca`, `congelados`, `bebidas` y `otros`.
@@ -477,6 +488,7 @@ Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
       "cantidad": 2,
       "unidad": "l",
       "categoria": "lácteos y huevos",
+      "ubicacion": "nevera",
       "fechaCaducidad": "2026-12-01",
       "estadoCaducidad": "vigente",
       "diasRestantes": 14,
@@ -484,7 +496,12 @@ Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
       "actualizadoEn": "…"
     }
   ],
-  "resumen": { "total": 1, "caducados": 0, "proximos": 0 }
+  "resumen": {
+    "total": 1,
+    "caducados": 0,
+    "proximos": 0,
+    "porUbicacion": { "nevera": 1, "congelador": 0, "despensa": 0 }
+  }
 }
 ```
 
