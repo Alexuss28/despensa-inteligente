@@ -2,7 +2,8 @@ const { randomBytes } = require("node:crypto");
 const { OAuth2Client } = require("google-auth-library");
 const { ErrorNegocio } = require("./modelo");
 
-function crearGoogle(env = process.env) {
+// El parámetro "cliente" permite sustituir el cliente OAuth en las pruebas.
+function crearGoogle(env = process.env, { cliente: clienteInyectado } = {}) {
   const {
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
@@ -43,7 +44,7 @@ function crearGoogle(env = process.env) {
     base
   ).toString();
 
-  const cliente = new OAuth2Client(
+  const cliente = clienteInyectado || new OAuth2Client(
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
     callback
@@ -57,7 +58,72 @@ function crearGoogle(env = process.env) {
     );
   }
 
+  function identidadValida(identidad, nonce) {
+    return (
+      identidad &&
+      identidad.nonce === nonce &&
+      identidad.email_verified === true &&
+      typeof identidad.sub === "string" &&
+      identidad.sub.length > 0 &&
+      typeof identidad.email === "string" &&
+      identidad.email.length > 0
+    );
+  }
+
+  function intentoValido(intento) {
+    return (
+      intento &&
+      typeof intento.nonce === "string" &&
+      intento.nonce.length > 0 &&
+      Number.isFinite(intento.caducaEn) &&
+      Date.now() < intento.caducaEn
+    );
+  }
+
   return {
+    clientId: GOOGLE_CLIENT_ID,
+
+    // Google One Tap: el navegador recibe un ID token firmado por Google
+    // y lo envía al servidor, que lo verifica antes de crear la sesión.
+    prepararOneTap() {
+      return {
+        nonce: randomBytes(32).toString("hex"),
+        caducaEn: Date.now() + 10 * 60 * 1000
+      };
+    },
+
+    async verificarCredencial(credential, intento) {
+      if (
+        !intentoValido(intento) ||
+        typeof credential !== "string" ||
+        credential.length === 0 ||
+        credential.length > 4096
+      ) {
+        throw errorAcceso();
+      }
+
+      try {
+        const ticket = await cliente.verifyIdToken({
+          idToken: credential,
+          audience: GOOGLE_CLIENT_ID
+        });
+
+        const identidad = ticket.getPayload();
+
+        if (!identidadValida(identidad, intento.nonce)) {
+          throw errorAcceso();
+        }
+
+        return {
+          sub: identidad.sub,
+          email: identidad.email,
+          email_verified: true
+        };
+      } catch {
+        throw errorAcceso();
+      }
+    },
+
     async iniciar() {
       const state = randomBytes(32).toString("hex");
       const nonce = randomBytes(32).toString("hex");
@@ -119,15 +185,7 @@ function crearGoogle(env = process.env) {
 
         const identidad = ticket.getPayload();
 
-        if (
-          !identidad ||
-          identidad.nonce !== intento.nonce ||
-          identidad.email_verified !== true ||
-          typeof identidad.sub !== "string" ||
-          !identidad.sub ||
-          typeof identidad.email !== "string" ||
-          !identidad.email
-        ) {
+        if (!identidadValida(identidad, intento.nonce)) {
           throw errorAcceso();
         }
 
