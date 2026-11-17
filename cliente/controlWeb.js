@@ -20,6 +20,31 @@ function mostrarMensaje(texto, esError = false) {
   mensaje.className = esError ? "error" : "correcto";
 }
 
+function sesionCaducada() {
+  mostrarAcceso();
+  mostrarMensaje("La sesión ha caducado. Inicia sesión de nuevo.", true);
+}
+
+const despensa = new Despensa(rest, { mostrarMensaje, sesionCaducada });
+
+const oneTap = new GoogleOneTap(rest, {
+  mostrarMensaje,
+  alIniciarSesion(datos) {
+    mostrarUsuario(datos);
+    mostrarMensaje("Sesión iniciada con Google");
+  }
+});
+
+// Mensajes para los códigos que devuelve el servidor al fallar Google.
+const ERRORES_GOOGLE = {
+  cancelado: "Has cancelado el acceso con Google.",
+  no_disponible: "El acceso con Google no está disponible en este momento.",
+  cuenta_existente:
+    "Ya existe una cuenta con ese correo. Inicia sesión con tu contraseña.",
+  cuenta_no_permitida: "Esta cuenta no tiene permitido iniciar sesión.",
+  fallo: "No se ha podido completar el acceso con Google. Vuelve a intentarlo."
+};
+
 function limpiarPanelAdmin() {
   versionVista++;
   cargandoUsuarios = false;
@@ -39,6 +64,8 @@ function mostrarUsuario(datos) {
   panel.hidden = false;
   usuario.textContent = `Has iniciado sesión como ${datos.email}`;
   botonAdmin.hidden = datos.rol !== "administrador";
+  oneTap.ocultar();
+  despensa.mostrar();
 }
 
 function mostrarAcceso() {
@@ -48,6 +75,7 @@ function mostrarAcceso() {
   panel.hidden = true;
   botonAdmin.hidden = true;
   usuario.textContent = "";
+  despensa.limpiar();
 }
 
 function crearCelda(texto) {
@@ -105,8 +133,7 @@ async function cargarUsuarios() {
     if (versionSolicitud !== versionVista) return;
 
     if (error.estadoHTTP === 401) {
-      mostrarAcceso();
-      mostrarMensaje("La sesión ha caducado. Inicia sesión de nuevo.", true);
+      sesionCaducada();
       return;
     }
 
@@ -148,10 +175,24 @@ document.querySelector("#form-registro")
 
     ejecutarFormulario(event.currentTarget, async () => {
       const email = document.querySelector("#registro-email").value;
-      const password = document.querySelector("#registro-password").value;
+      const campoPassword = document.querySelector("#registro-password");
+      const campoRepetida = document.querySelector("#registro-password-repetida");
+      const password = campoPassword.value;
+
+      if (password.length < 8) {
+        campoPassword.focus();
+        throw new Error("La contraseña debe tener al menos 8 caracteres.");
+      }
+
+      if (password !== campoRepetida.value) {
+        campoRepetida.focus();
+        throw new Error("Las contraseñas no coinciden.");
+      }
+
       const resultado = await rest.registrar(email, password);
 
-      document.querySelector("#registro-password").value = "";
+      campoPassword.value = "";
+      campoRepetida.value = "";
       document.querySelector("#login-email").value = email;
       mostrarMensaje(resultado.mensaje);
     });
@@ -182,6 +223,7 @@ document.querySelector("#btn-salir")
 
     try {
       await rest.logout();
+      oneTap.alCerrarSesion();
       mostrarAcceso();
       mostrarMensaje("Has cerrado sesión");
     } catch (error) {
@@ -201,10 +243,31 @@ async function comprobarSesion() {
   } catch (error) {
     mostrarAcceso();
 
-    if (error.estadoHTTP !== 401) {
+    if (error.estadoHTTP === 401) {
+      oneTap.mostrar();
+    } else {
       mostrarMensaje(error.message, true);
     }
   }
+}
+
+// Muestra un mensaje si el servidor ha devuelto un error de Google.
+function prepararErrorGoogle() {
+  const parametros = new URLSearchParams(window.location.hash.slice(1));
+
+  if (!parametros.has("error-google")) {
+    return;
+  }
+
+  const codigo = parametros.get("error-google");
+
+  window.history.replaceState(
+    null,
+    "",
+    window.location.pathname + window.location.search
+  );
+
+  mostrarMensaje(ERRORES_GOOGLE[codigo] || ERRORES_GOOGLE.fallo, true);
 }
 document.querySelector("#form-reenvio")
   .addEventListener("submit", event => {
@@ -270,6 +333,8 @@ function prepararConfirmacion() {
 
   return true;
 }
+
+prepararErrorGoogle();
 
 if (!prepararConfirmacion()) {
   comprobarSesion();
