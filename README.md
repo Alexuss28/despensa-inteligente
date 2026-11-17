@@ -276,6 +276,25 @@ Otras mejoras:
 - `CadMongo` crea los índices de `usuarios` y `alimentos` al conectar
   y conserva los que ya existan con otras opciones.
 
+### Sprint 3: estilo visual «Mercado»
+
+Nueva identidad visual para dar un aspecto más profesional:
+
+- Tipografías Bricolage Grotesque (títulos) e Inter (texto),
+  cargadas desde Google Fonts.
+- Paleta azul marino (`#1b2a41`) con naranja tomate (`#c2410c`)
+  sobre fondo cálido; los colores están en variables CSS en
+  `cliente/estilos.css`.
+- Portada con titular, formularios de acceso y ventajas.
+- Panel con tarjetas de resumen (caducados, caducan pronto,
+  sin prisa y total), lista con punto de color y pastilla de estado,
+  y formulario de alta en un panel lateral.
+- Barra superior con la cuenta y pie de página.
+- En el móvil, el formulario de alta aparece antes de la lista
+  y cada alimento se muestra como una tarjeta.
+- Contrastes de texto AA, foco visible y enlace para saltar
+  al contenido.
+
 ## Persistencia
 
 Los usuarios, los alimentos y las sesiones se almacenan en las

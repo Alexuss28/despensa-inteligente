@@ -1,67 +1,313 @@
+/* =========================================================
+   Despensa Inteligente · estilo «Mercado»
+   ========================================================= */
+
+:root {
+  --tinta: #1b2a41;
+  --tinta-suave: #44516a;
+  --gris: #5f6b80;
+  --fondo: #fffaf5;
+  --superficie: #ffffff;
+  --linea: #efe6dc;
+  --linea-fuerte: #1b2a41;
+  --acento: #c2410c;
+  --acento-oscuro: #9a3412;
+  --acento-claro: #ffb48f;
+
+  --rojo-fondo: #fde9e1;
+  --rojo-texto: #a3330a;
+  --rojo-punto: #c2410c;
+  --ambar-fondo: #fff1cf;
+  --ambar-texto: #6b4800;
+  --ambar-punto: #d99a00;
+  --verde-fondo: #e5efe6;
+  --verde-texto: #1d4a2d;
+  --verde-punto: #2f7d4a;
+  --neutro-fondo: #f1ece6;
+
+  --titulos: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+  --texto: "Inter", system-ui, sans-serif;
+
+  --radio: 14px;
+  --radio-grande: 20px;
+  --sombra-marcada: 8px 8px 0 var(--tinta);
+  --foco: 3px solid #d97706;
+}
+
 * {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: system-ui, sans-serif;
-  background: #f4f7f2;
-  color: #24352b;
-}
-
-main {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 20px;
-}
-
-header {
-  margin-bottom: 24px;
-}
-
-h1 {
-  color: #27633e;
-}
-
-#acceso {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
 }
 
 [hidden] {
   display: none !important;
 }
 
-.tarjeta {
-  background: white;
-  padding: 24px;
-  border: 1px solid #dce5d8;
-  border-radius: 16px;
+html {
+  -webkit-text-size-adjust: 100%;
 }
+
+body {
+  margin: 0;
+  font-family: var(--texto);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--fondo);
+  color: var(--tinta);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--titulos);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 1.6rem;
+  margin: 0 0 16px;
+}
+
+h3 {
+  font-size: 1.2rem;
+  margin: 0 0 12px;
+}
+
+a {
+  color: var(--acento-oscuro);
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+main.contenedor {
+  flex: 1;
+  padding-top: 24px;
+  padding-bottom: 64px;
+}
+
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.saltar {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  background: var(--tinta);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 999px;
+  z-index: 10;
+}
+
+.saltar:focus {
+  top: 12px;
+}
+
+/* ---------- Barra superior ---------- */
+
+.barra {
+  background: var(--fondo);
+  border-bottom: 1.5px solid var(--linea);
+}
+
+.barra-interior {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.logo {
+  font-family: var(--titulos);
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.logo-punto {
+  color: var(--acento);
+}
+
+.panel-cuenta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.panel-cuenta p {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.panel-cuenta button {
+  padding: 9px 16px;
+  font-size: 0.95rem;
+}
+
+/* ---------- Mensajes ---------- */
+
+#mensaje {
+  margin: 0 0 16px;
+}
+
+#mensaje:empty {
+  display: none;
+}
+
+#mensaje.correcto,
+#mensaje.error {
+  padding: 12px 18px;
+  border-radius: var(--radio);
+  font-weight: 600;
+}
+
+#mensaje.correcto {
+  background: var(--verde-fondo);
+  color: var(--verde-texto);
+}
+
+#mensaje.error {
+  background: var(--rojo-fondo);
+  color: var(--rojo-texto);
+}
+
+.error {
+  color: var(--rojo-texto);
+}
+
+.correcto {
+  color: var(--verde-texto);
+}
+
+.aviso {
+  color: var(--rojo-texto);
+}
+
+/* ---------- Tarjetas ---------- */
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio-grande);
+  padding: 28px;
+}
+
+.tarjeta-marcada {
+  border-color: var(--linea-fuerte);
+  box-shadow: var(--sombra-marcada);
+}
+
+.tarjeta-centrada {
+  max-width: 520px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+/* ---------- Formularios ---------- */
 
 form {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 input,
+select,
 button {
   font: inherit;
-  padding: 12px;
-  border-radius: 8px;
 }
 
-input {
+input,
+select {
   width: 100%;
-  border: 1px solid #87988b;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1.5px solid #c9bfb3;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--tinta);
+}
+
+input:hover,
+select:hover {
+  border-color: var(--tinta-suave);
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  accent-color: var(--acento);
 }
 
 button {
-  background: #27633e;
-  color: white;
-  border: none;
+  min-height: 46px;
+  padding: 11px 22px;
+  border: 1.5px solid var(--acento);
+  border-radius: 999px;
+  background: var(--acento);
+  color: #ffffff;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+button:hover {
+  background: var(--acento-oscuro);
+  border-color: var(--acento-oscuro);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--tinta);
+  border-color: var(--tinta);
+}
+
+button.secundario:hover {
+  background: var(--tinta);
+  color: #ffffff;
+}
+
+button.peligro {
+  background: transparent;
+  color: var(--rojo-texto);
+  border-color: var(--rojo-texto);
+}
+
+button.peligro:hover {
+  background: var(--rojo-texto);
+  color: #ffffff;
 }
 
 button:disabled {
@@ -70,52 +316,287 @@ button:disabled {
 }
 
 input:focus-visible,
-button:focus-visible {
-  outline: 3px solid #c28a13;
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: var(--foco);
   outline-offset: 3px;
 }
 
 .ayuda {
   font-size: 0.9rem;
   margin: 0;
+  color: var(--gris);
 }
 
-.error {
-  color: #a32020;
+.campo {
+  display: grid;
+  gap: 6px;
+  align-content: start;
 }
 
-.correcto {
-  color: #27633e;
+.campo-ancho {
+  grid-column: 1 / -1;
 }
 
-@media (max-width: 650px) {
-  #acceso {
-    grid-template-columns: 1fr;
-  }
-}
-#panel-admin {
-  margin-top: 24px;
+/* ---------- Portada (sin sesión) ---------- */
+
+.portada {
+  text-align: center;
+  padding: 40px 0 48px;
 }
 
-.cabecera-admin {
+.titular {
+  font-size: clamp(2.6rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  max-width: 900px;
+  margin: 0 auto 20px;
+}
+
+.acento {
+  color: var(--acento);
+}
+
+.entradilla {
+  font-size: 1.2rem;
+  color: var(--tinta-suave);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.acceso-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 32px;
+  max-width: 960px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.alternativa-acceso {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--gris);
+  font-size: 0.9rem;
 }
 
-.cabecera-admin h2 {
-  margin-top: 0;
+.alternativa-acceso::before,
+.alternativa-acceso::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--linea);
 }
 
-.cabecera-admin p {
-  color: #526458;
+.boton-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 11px 18px;
+  border: 1.5px solid var(--tinta);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--tinta);
+  font-weight: 600;
+  text-decoration: none;
 }
 
-#btn-admin {
-  margin-right: 12px;
-  margin-bottom: 12px;
+.boton-google:hover {
+  background: var(--tinta);
+  color: #ffffff;
 }
+
+.reenvio {
+  margin-top: 20px;
+  border-top: 1.5px solid var(--linea);
+  padding-top: 16px;
+}
+
+.reenvio summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.reenvio form {
+  margin-top: 14px;
+}
+
+.ventajas {
+  list-style: none;
+  padding: 0;
+  margin: 72px auto 0;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 40px;
+}
+
+.ventajas li {
+  border-top: 1.5px solid var(--tinta);
+  padding: 20px 0;
+}
+
+.ventaja-numero {
+  font-family: var(--titulos);
+  font-weight: 800;
+  color: var(--acento);
+}
+
+.ventajas h3 {
+  font-size: 1.35rem;
+  margin: 6px 0 6px;
+}
+
+.ventajas p {
+  margin: 0;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Despensa (con sesión) ---------- */
+
+.titulo-seccion {
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 800;
+  margin: 8px 0 20px;
+}
+
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.resumen-tarjeta {
+  border-radius: var(--radio);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resumen-numero {
+  font-family: var(--titulos);
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.resumen-etiqueta {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.resumen-rojo {
+  background: var(--rojo-fondo);
+  color: var(--rojo-texto);
+}
+
+.resumen-ambar {
+  background: var(--ambar-fondo);
+  color: var(--ambar-texto);
+}
+
+.resumen-verde {
+  background: var(--verde-fondo);
+  color: var(--verde-texto);
+}
+
+.resumen-neutro {
+  background: var(--neutro-fondo);
+  color: var(--tinta-suave);
+}
+
+.despensa-cuerpo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.despensa-lista {
+  flex: 999 1 560px;
+  min-width: 0;
+  padding: 22px;
+}
+
+.despensa-lateral {
+  flex: 1 1 320px;
+  display: grid;
+  gap: 24px;
+}
+
+.panel-oscuro {
+  background: var(--tinta);
+  color: #ffffff;
+  border-radius: var(--radio-grande);
+  padding: 24px;
+}
+
+.panel-oscuro h3 {
+  color: #ffffff;
+  margin: 0;
+}
+
+.panel-oscuro label {
+  color: #e3e8ef;
+}
+
+.panel-oscuro input,
+.panel-oscuro select {
+  border-color: #3a4a63;
+}
+
+.panel-oscuro .error {
+  color: var(--acento-claro);
+}
+
+.panel-oscuro button.secundario {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.panel-oscuro button.secundario:hover {
+  background: #ffffff;
+  color: var(--tinta);
+}
+
+.campos-alimento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.acciones-formulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#error-alimento:empty {
+  display: none;
+}
+
+.filtros-despensa {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+#estado-despensa:empty {
+  display: none;
+}
+
+/* ---------- Tablas ---------- */
 
 .tabla-contenedor {
   overflow-x: auto;
@@ -135,155 +616,85 @@ caption {
 
 th,
 td {
-  padding: 14px;
-  border-bottom: 1px solid #dce5d8;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--linea);
   overflow-wrap: anywhere;
 }
 
 th {
-  background: #edf4ee;
-  color: #27633e;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gris);
+  font-weight: 700;
 }
 
-tbody tr:hover {
-  background: #f6f9f5;
+#tabla-alimentos th,
+#tabla-alimentos td {
+  overflow-wrap: normal;
+  vertical-align: middle;
 }
 
-@media (max-width: 650px) {
-  .cabecera-admin {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  th,
-  td {
-    padding: 10px;
-  }
-}
-.alternativa-acceso {
-  margin: 24px 0 12px;
-  text-align: center;
-}
-
-.boton-google {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 12px 16px;
-  border: 1px solid #87988b;
-  border-radius: 8px;
-  background: white;
-  color: #24352b;
-  font: inherit;
-  text-align: center;
-  text-decoration: none;
-}
-
-.boton-google:hover {
-  background: #f4f7f2;
-}
-
-.boton-google:focus-visible {
-  outline: 3px solid #c28a13;
-  outline-offset: 3px;
-}
-/* ---------- Sprint 2: despensa ---------- */
-
-select {
-  font: inherit;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #87988b;
-  background: white;
-  width: 100%;
-}
-
-select:focus-visible {
-  outline: 3px solid #c28a13;
-  outline-offset: 3px;
-}
-
-button.secundario {
-  background: white;
-  color: #27633e;
-  border: 1px solid #27633e;
-}
-
-button.peligro {
-  background: white;
-  color: #a32020;
-  border: 1px solid #a32020;
-}
-
-.acciones-cuenta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.acciones-cuenta #btn-admin {
-  margin: 0;
-}
-
-#despensa {
-  margin-top: 24px;
-}
-
-#despensa h2 {
-  margin-top: 0;
-}
-
-#resumen-despensa {
+.celda-nombre {
   font-weight: 600;
 }
 
-.aviso {
-  color: #a32020;
+#tabla-alimentos td:nth-child(2) {
+  white-space: nowrap;
 }
 
-#form-alimento {
-  background: #f6f9f5;
-  border: 1px solid #dce5d8;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
+.punto {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-right: 10px;
+  background: #9aa3b2;
 }
 
-#form-alimento h3 {
-  margin: 0;
+.caducidad-caducado .punto {
+  background: var(--rojo-punto);
 }
 
-.campos-alimento {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+.caducidad-proximo .punto {
+  background: var(--ambar-punto);
 }
 
-.campo {
-  display: grid;
-  gap: 6px;
-  align-content: start;
+.caducidad-vigente .punto {
+  background: var(--verde-punto);
 }
 
-.campo-ancho {
-  grid-column: 1 / -1;
+.pastilla {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--neutro-fondo);
+  color: var(--tinta-suave);
 }
 
-.acciones-formulario {
-  display: flex;
-  gap: 12px;
+.caducidad-caducado .pastilla {
+  background: var(--rojo-fondo);
+  color: var(--rojo-texto);
 }
 
-#error-alimento:empty {
-  display: none;
+.caducidad-proximo .pastilla {
+  background: var(--ambar-fondo);
+  color: var(--ambar-texto);
 }
 
-.filtros-despensa {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
+.caducidad-vigente .pastilla {
+  background: var(--verde-fondo);
+  color: var(--verde-texto);
+}
+
+.fecha-caducidad {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--gris);
 }
 
 .acciones-fila {
@@ -293,49 +704,90 @@ button.peligro {
 }
 
 .acciones-fila button {
-  padding: 6px 10px;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+}
+
+/* ---------- Administración ---------- */
+
+#panel-admin {
+  margin-top: 32px;
+}
+
+.cabecera-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.cabecera-admin h2 {
+  margin: 0;
+}
+
+.cabecera-admin p {
+  color: var(--tinta-suave);
+}
+
+/* ---------- Pie ---------- */
+
+.pie {
+  background: var(--tinta);
+  color: #c9d0dc;
   font-size: 0.9rem;
 }
 
-tr.caducidad-caducado .celda-caducidad {
-  color: #a32020;
-  font-weight: 600;
+.pie-interior {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
 
-tr.caducidad-proximo .celda-caducidad {
-  color: #8a5a00;
-  font-weight: 600;
+.logo-pie {
+  color: #ffffff;
+  font-size: 1.3rem;
 }
 
-tr.caducidad-caducado {
-  background: #fdf1f1;
-}
+/* ---------- Pantallas estrechas ---------- */
 
-tr.caducidad-proximo {
-  background: #fff8e8;
-}
-
-.solo-lector {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-#tabla-alimentos th,
-#tabla-alimentos td {
-  overflow-wrap: normal;
-}
-
-/* En pantallas estrechas cada alimento se muestra como una tarjeta. */
 @media (max-width: 650px) {
-  .campos-alimento,
+  .contenedor {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .tarjeta {
+    padding: 20px;
+  }
+
+  .tarjeta-marcada {
+    box-shadow: 5px 5px 0 var(--tinta);
+  }
+
+  .portada {
+    padding: 20px 0 32px;
+  }
+
   .filtros-despensa {
     grid-template-columns: 1fr;
   }
 
+  /* En el móvil, el formulario de alta va antes que la lista. */
+  .despensa-lateral {
+    order: -1;
+  }
+
+  .cabecera-admin {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Cada alimento se muestra como una tarjeta. */
   #tabla-alimentos,
   #tabla-alimentos tbody,
   #tabla-alimentos tr,
@@ -348,15 +800,11 @@ tr.caducidad-proximo {
     display: none;
   }
 
-  #tabla-alimentos caption {
-    display: block;
-  }
-
   #tabla-alimentos tr {
-    border: 1px solid #dce5d8;
-    border-radius: 12px;
+    border: 1.5px solid var(--linea);
+    border-radius: var(--radio);
     margin-bottom: 12px;
-    padding: 8px 12px;
+    padding: 10px 14px;
   }
 
   #tabla-alimentos td {
@@ -366,16 +814,21 @@ tr.caducidad-proximo {
 
   #tabla-alimentos td[data-etiqueta]::before {
     content: attr(data-etiqueta) ": ";
-    color: #526458;
+    color: var(--gris);
   }
 
   #tabla-alimentos .celda-nombre {
-    font-weight: 600;
     font-size: 1.05rem;
   }
 
   .acciones-fila {
     justify-content: flex-start;
     padding-top: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
   }
 }

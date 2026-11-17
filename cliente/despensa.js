@@ -56,7 +56,7 @@ class Despensa {
     this.seccion.hidden = true;
     this.filas.replaceChildren();
     this.tabla.hidden = true;
-    this.resumen.textContent = "";
+    this.resumen.replaceChildren();
     this.estado.textContent = "";
     this.filtroTexto.value = "";
     this.filtroEstado.value = "todos";
@@ -82,25 +82,44 @@ class Despensa {
     }
   }
 
+  crearTarjetaResumen(numero, etiqueta, color) {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = `resumen-tarjeta resumen-${color}`;
+
+    const cifra = document.createElement("span");
+    cifra.className = "resumen-numero";
+    cifra.textContent = numero;
+
+    const texto = document.createElement("span");
+    texto.className = "resumen-etiqueta";
+    texto.textContent = etiqueta;
+
+    tarjeta.append(cifra, texto);
+    return tarjeta;
+  }
+
   pintarResumen({ total, caducados, proximos }) {
     if (total === 0) {
-      this.resumen.textContent = "Tu despensa está vacía.";
-      this.resumen.className = "";
+      this.resumen.replaceChildren();
       return;
     }
 
-    const partes = [`${total} ${total === 1 ? "alimento" : "alimentos"}`];
+    const enBuenEstado = total - caducados - proximos;
 
-    if (caducados > 0) {
-      partes.push(`${caducados} caducado${caducados === 1 ? "" : "s"}`);
-    }
-
-    if (proximos > 0) {
-      partes.push(`${proximos} a punto de caducar`);
-    }
-
-    this.resumen.textContent = partes.join(" · ");
-    this.resumen.className = caducados > 0 ? "aviso" : "";
+    this.resumen.replaceChildren(
+      this.crearTarjetaResumen(
+        caducados,
+        caducados === 1 ? "caducado" : "caducados",
+        "rojo"
+      ),
+      this.crearTarjetaResumen(proximos, "caducan pronto", "ambar"),
+      this.crearTarjetaResumen(enBuenEstado, "sin prisa", "verde"),
+      this.crearTarjetaResumen(
+        total,
+        total === 1 ? "alimento en total" : "alimentos en total",
+        "neutro"
+      )
+    );
   }
 
   filtrados() {
@@ -154,34 +173,50 @@ class Despensa {
     return celda;
   }
 
-  textoCaducidad(alimento) {
-    const { estadoCaducidad, diasRestantes, fechaCaducidad } = alimento;
+  // Texto breve para la pastilla de estado.
+  estadoCorto(alimento) {
+    const { estadoCaducidad, diasRestantes } = alimento;
 
     if (estadoCaducidad === "sin_fecha") return "Sin fecha";
 
-    const fecha = new Date(`${fechaCaducidad}T00:00:00`)
-      .toLocaleDateString("es-ES");
-
     if (estadoCaducidad === "caducado") {
       const dias = Math.abs(diasRestantes);
-      return `${fecha} · caducó hace ${dias} día${dias === 1 ? "" : "s"}`;
+      if (dias === 1) return "Caducó ayer";
+      return `Caducó hace ${dias} días`;
     }
 
-    if (diasRestantes === 0) return `${fecha} · caduca hoy`;
-    if (diasRestantes === 1) return `${fecha} · caduca mañana`;
+    if (diasRestantes === 0) return "Caduca hoy";
+    if (diasRestantes === 1) return "Mañana";
 
-    return `${fecha} · faltan ${diasRestantes} días`;
+    return `En ${diasRestantes} días`;
+  }
+
+  crearCeldaCaducidad(alimento) {
+    const celda = document.createElement("td");
+    celda.className = "celda-caducidad";
+    celda.dataset.etiqueta = "Caducidad";
+
+    const pastilla = document.createElement("span");
+    pastilla.className = "pastilla";
+    pastilla.textContent = this.estadoCorto(alimento);
+    celda.append(pastilla);
+
+    if (alimento.fechaCaducidad) {
+      const fecha = document.createElement("span");
+      fecha.className = "fecha-caducidad";
+      fecha.textContent = new Date(`${alimento.fechaCaducidad}T00:00:00`)
+        .toLocaleDateString("es-ES");
+      celda.append(fecha);
+    }
+
+    return celda;
   }
 
   crearFila(alimento) {
     const fila = document.createElement("tr");
     fila.className = `caducidad-${alimento.estadoCaducidad}`;
 
-    const caducidad = this.crearCelda(
-      this.textoCaducidad(alimento),
-      "Caducidad"
-    );
-    caducidad.className = "celda-caducidad";
+    const caducidad = this.crearCeldaCaducidad(alimento);
 
     const celdaAcciones = document.createElement("td");
     const acciones = document.createElement("div");
@@ -204,8 +239,14 @@ class Despensa {
 
     acciones.append(editar, eliminar);
 
-    const nombre = this.crearCelda(alimento.nombre);
+    const nombre = document.createElement("td");
     nombre.className = "celda-nombre";
+
+    const punto = document.createElement("span");
+    punto.className = "punto";
+    punto.setAttribute("aria-hidden", "true");
+
+    nombre.append(punto, alimento.nombre);
 
     fila.append(
       nombre,
