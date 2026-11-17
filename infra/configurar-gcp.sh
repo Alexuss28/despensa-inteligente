@@ -10,7 +10,8 @@
 #
 # Crea:
 #   - La cuenta de servicio github-operaciones, con los permisos justos:
-#     Secret Manager, despliegue en Cloud Run y Cloud Scheduler.
+#     Secret Manager, despliegue en Cloud Run, lectura de la imagen en
+#     Artifact Registry y Cloud Scheduler.
 #   - El grupo de identidades "github" y el proveedor "despensa-repo",
 #     que SOLO acepta el flujo operaciones-gcp.yml de la rama main
 #     de este repositorio.
@@ -78,6 +79,17 @@ gcloud iam service-accounts add-iam-policy-binding "${CUENTA_RUN}" \
   --member="serviceAccount:${CUENTA_EMAIL}" \
   --role="roles/iam.serviceAccountUser" \
   --quiet >/dev/null
+
+# Al crear una revisión, Cloud Run vuelve a leer la imagen del servicio,
+# que Cloud Build guarda en este repositorio de Artifact Registry.
+if gcloud artifacts repositories describe cloud-run-source-deploy \
+  --location="${REGION}" >/dev/null 2>&1; then
+  gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
+    --location="${REGION}" \
+    --member="serviceAccount:${CUENTA_EMAIL}" \
+    --role="roles/artifactregistry.reader" \
+    --format=none
+fi
 
 echo "4/6 Grupo de identidades \"${GRUPO}\"..."
 if ! gcloud iam workload-identity-pools describe "${GRUPO}" \
