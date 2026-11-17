@@ -62,7 +62,7 @@ function mostrarUsuario(datos) {
   usuarioActual = datos;
   acceso.hidden = true;
   panel.hidden = false;
-  usuario.textContent = `Has iniciado sesión como ${datos.email}`;
+  usuario.textContent = datos.email;
   botonAdmin.hidden = datos.rol !== "administrador";
   oneTap.ocultar();
   despensa.mostrar();
