@@ -918,8 +918,19 @@ th {
     grid-template-columns: 1fr;
   }
 
-  /* En el móvil, el formulario de alta va antes que la lista. */
+  /* En el móvil, el panel lateral se reparte: el formulario de alta va
+     antes que los alimentos, y la lista de la compra y los avisos después. */
   .despensa-lateral {
+    display: contents;
+  }
+
+  .despensa-cuerpo > *,
+  .despensa-lateral > * {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  #form-alimento {
     order: -1;
   }
 
