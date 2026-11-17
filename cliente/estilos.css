@@ -780,6 +780,58 @@ th {
   font-weight: 600;
 }
 
+.detalle-alimento {
+  display: block;
+  margin: 2px 0 0 20px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--gris);
+}
+
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+button.pestana {
+  min-height: 40px;
+  padding: 7px 14px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--tinta);
+  border: 1.5px solid var(--linea);
+}
+
+button.pestana:hover {
+  background: var(--neutro-fondo);
+  border-color: var(--neutro-fondo);
+  color: var(--tinta);
+}
+
+button.pestana[aria-pressed="true"] {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: #ffffff;
+}
+
+.pestana-numero {
+  display: inline-block;
+  min-width: 22px;
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--neutro-fondo);
+  color: var(--tinta-suave);
+  font-size: 0.8rem;
+}
+
+button.pestana[aria-pressed="true"] .pestana-numero {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
 #tabla-alimentos td:nth-child(2) {
   white-space: nowrap;
 }

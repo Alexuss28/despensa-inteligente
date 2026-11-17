@@ -11,6 +11,11 @@ const CATEGORIAS = [
   "otros"
 ];
 
+// Dónde se guarda el alimento. Los alimentos anteriores a esta
+// funcionalidad no tienen ubicación y se consideran de la despensa.
+const UBICACIONES = ["nevera", "congelador", "despensa"];
+const UBICACION_POR_DEFECTO = "despensa";
+
 const DIAS_AVISO_CADUCIDAD = 3;
 const MAX_ALIMENTOS_POR_USUARIO = 500;
 const ZONA_HORARIA = "Europe/Madrid";
@@ -108,6 +113,12 @@ function validarDatosAlimento(datos) {
     return { error: "La categoría no es válida" };
   }
 
+  const ubicacion = datos.ubicacion ?? UBICACION_POR_DEFECTO;
+
+  if (!UBICACIONES.includes(ubicacion)) {
+    return { error: "La ubicación no es válida" };
+  }
+
   let fechaCaducidad = datos.fechaCaducidad ?? null;
 
   if (fechaCaducidad === "") {
@@ -150,6 +161,7 @@ function validarDatosAlimento(datos) {
       cantidad: Math.round(cantidad * 1000) / 1000,
       unidad,
       categoria,
+      ubicacion,
       fechaCaducidad,
       stockMinimo
     }
@@ -179,6 +191,8 @@ function compararAlimentos(a, b) {
 }
 
 module.exports = {
+  UBICACIONES,
+  UBICACION_POR_DEFECTO,
   UNIDADES,
   CATEGORIAS,
   DIAS_AVISO_CADUCIDAD,

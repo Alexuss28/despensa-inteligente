@@ -161,8 +161,11 @@ test.describe("Integración Sistema + CadMongo", { skip: motivoOmision }, () => 
       cantidad: 2,
       unidad: "l",
       categoria: "lácteos y huevos",
+      ubicacion: "nevera",
       fechaCaducidad: "2099-12-31"
     });
+
+    assert.equal(creado.ubicacion, "nevera");
 
     const lista = await sistema.listarAlimentos("ana@example.com");
     assert.equal(lista.alimentos.length, 1);
