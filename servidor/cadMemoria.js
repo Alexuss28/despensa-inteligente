@@ -1,6 +1,40 @@
 class CadMemoria {
   constructor() {
     this.usuarios = new Map();
+    this.alimentos = new Map();
+  }
+
+  // Alimentos: la clave combina propietario e identificador.
+  claveAlimento(usuarioId, id) {
+    return `${usuarioId}:${id}`;
+  }
+
+  async listarAlimentos(usuarioId) {
+    return [...this.alimentos.values()]
+      .filter(alimento => alimento.usuarioId === usuarioId)
+      .map(alimento => ({ ...alimento }));
+  }
+
+  async contarAlimentos(usuarioId) {
+    return (await this.listarAlimentos(usuarioId)).length;
+  }
+
+  async buscarAlimento(usuarioId, id) {
+    const alimento = this.alimentos.get(this.claveAlimento(usuarioId, id));
+    return alimento ? { ...alimento } : null;
+  }
+
+  async guardarAlimento(alimento) {
+    this.alimentos.set(
+      this.claveAlimento(alimento.usuarioId, alimento.id),
+      { ...alimento }
+    );
+
+    return { ...alimento };
+  }
+
+  async eliminarAlimento(usuarioId, id) {
+    return this.alimentos.delete(this.claveAlimento(usuarioId, id));
   }
 
   async buscarPorEmail(email) {
