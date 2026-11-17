@@ -148,6 +148,7 @@ En otros terminales puede utilizarse `npm` en lugar de `npm.cmd`.
 | `SMTP_PASSWORD` | Contraseña de aplicación de la cuenta Gmail. |
 | `GOOGLE_CLIENT_ID` | Identificador del cliente OAuth de Google. |
 | `GOOGLE_CLIENT_SECRET` | Secreto del cliente OAuth de Google. |
+| `TAREAS_TOKEN` | Opcional. Token secreto (32 caracteres o más) de las tareas programadas, como los avisos de caducidad. |
 | `MONGODB_URI_TEST` | Opcional. Cadena de conexión para las pruebas de integración. |
 | `MONGODB_DB_TEST` | Opcional. Base de las pruebas de integración (por defecto `despensa_inteligente_test`). |
 
@@ -295,11 +296,58 @@ Nueva identidad visual para dar un aspecto más profesional:
 - Contrastes de texto AA, foco visible y enlace para saltar
   al contenido.
 
+### Sprint 3: avisos de caducidad por correo
+
+- Cada usuario decide en su panel si quiere avisos y con cuántos
+  días de antelación (1 a 7; por defecto, desactivados y 3 días).
+- El aviso incluye los alimentos caducados y los que caducan dentro
+  de esa antelación. Los alimentos sin fecha no se incluyen.
+- Si no hay nada que avisar, no se envía correo.
+- Cada usuario recibe como máximo un aviso al día, según la fecha
+  de España. Si el envío falla, sigue pendiente para el siguiente intento.
+- Las cuentas pendientes o eliminadas nunca reciben avisos.
+- El correo tiene versión de texto y versión HTML con el estilo
+  de la aplicación.
+
+El envío lo inicia un planificador externo, porque Cloud Run
+detiene las instancias sin tráfico. Hay dos formas:
+
+1. Ruta HTTP protegida: `POST /api/tareas/avisos-caducidad` con la
+   cabecera `Authorization: Bearer <TAREAS_TOKEN>`.
+2. Script: `npm run avisos`, que se conecta a MongoDB, envía los avisos
+   y termina (sirve para pruebas locales o para un Cloud Run Job).
+
+Sin `TAREAS_TOKEN` (o con menos de 32 caracteres), la ruta devuelve 503.
+
+### Sprint 3: lista de la compra automática
+
+- Cada alimento puede tener un **mínimo** opcional (`stockMinimo`).
+  Cuando su cantidad baja a ese valor o menos, aparece en la lista
+  de la compra y en la tabla se marca con «Reponer».
+- Al actualizar la cantidad del alimento por encima del mínimo,
+  sale de la lista automáticamente.
+- Además se pueden añadir productos a mano, con una cantidad opcional
+  en texto libre («1 kg», «un paquete»), marcarlos como comprados,
+  quitarlos uno a uno o quitar todos los comprados.
+- Cada usuario solo ve y modifica su propia lista
+  (máximo 200 productos añadidos a mano).
+
+### Sprint 3: ubicaciones
+
+- Cada alimento indica dónde se guarda: `nevera`, `congelador`
+  o `despensa` (por defecto).
+- Los alimentos creados antes de esta funcionalidad se tratan como
+  de la despensa, sin necesidad de migrar datos.
+- Pestañas para ver todo o solo una ubicación, con el número de
+  alimentos de cada una.
+- La ubicación y la categoría se muestran bajo el nombre del alimento.
+- El resumen de `GET /api/alimentos` incluye `porUbicacion`.
+
 ## Persistencia
 
-Los usuarios, los alimentos y las sesiones se almacenan en las
-colecciones `usuarios`, `alimentos` y `sesiones` de la base
-`despensa_inteligente`.
+Los usuarios, los alimentos, la lista de la compra y las sesiones se
+almacenan en las colecciones `usuarios`, `alimentos`, `listaCompra`
+y `sesiones` de la base `despensa_inteligente`.
 
 Cada alimento guarda el `id` de su propietario en `usuarioId`.
 El índice único `{ usuarioId, id }` acelera las consultas por usuario.
@@ -330,6 +378,14 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | GET | `/api/usuarios` | Administrador |
 | GET | `/api/usuarios/:email/activo` | Administrador |
 | DELETE | `/api/usuarios/:email` | Administrador o propietario de la cuenta |
+| GET | `/api/lista-compra` | Usuario autenticado; solo su lista |
+| POST | `/api/lista-compra` | Usuario autenticado |
+| PATCH | `/api/lista-compra/:id` | Propietario del elemento |
+| DELETE | `/api/lista-compra/:id` | Propietario del elemento |
+| DELETE | `/api/lista-compra/comprados` | Usuario autenticado |
+| GET | `/api/preferencias/avisos` | Usuario autenticado |
+| PUT | `/api/preferencias/avisos` | Usuario autenticado |
+| POST | `/api/tareas/avisos-caducidad` | Planificador con `TAREAS_TOKEN` |
 | GET | `/api/alimentos` | Usuario autenticado; solo sus alimentos |
 | POST | `/api/alimentos` | Usuario autenticado |
 | PUT | `/api/alimentos/:id` | Propietario del alimento |
@@ -415,8 +471,8 @@ El `nonce` se consume en el primer intento, tanto si es correcto como si no.
 }
 ```
 
-`unidad`, `categoria` y `fechaCaducidad` son opcionales
-(por defecto `unidades`, `otros` y sin fecha).
+`unidad`, `categoria`, `ubicacion` y `fechaCaducidad` son opcionales
+(por defecto `unidades`, `otros`, `despensa` y sin fecha).
 
 Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
 `panadería`, `despensa seca`, `congelados`, `bebidas` y `otros`.
@@ -432,6 +488,7 @@ Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
       "cantidad": 2,
       "unidad": "l",
       "categoria": "lácteos y huevos",
+      "ubicacion": "nevera",
       "fechaCaducidad": "2026-12-01",
       "estadoCaducidad": "vigente",
       "diasRestantes": 14,
@@ -439,11 +496,51 @@ Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
       "actualizadoEn": "…"
     }
   ],
-  "resumen": { "total": 1, "caducados": 0, "proximos": 0 }
+  "resumen": {
+    "total": 1,
+    "caducados": 0,
+    "proximos": 0,
+    "porUbicacion": { "nevera": 1, "congelador": 0, "despensa": 0 }
+  }
 }
 ```
 
 Un alimento inexistente o de otro usuario devuelve 404.
+
+Los alimentos admiten además `"stockMinimo"` (número o `null`) y la
+respuesta incluye `"bajoMinimo"`.
+
+### Lista de la compra
+
+`GET /api/lista-compra` devuelve:
+
+```json
+{
+  "automaticos": [
+    { "alimentoId": "…", "nombre": "Leche", "cantidad": 0, "unidad": "l", "stockMinimo": 1 }
+  ],
+  "manuales": [
+    { "id": "…", "nombre": "Pan", "cantidad": null, "comprado": false, "creadoEn": "…" }
+  ]
+}
+```
+
+`POST /api/lista-compra` recibe `{ "nombre": "Pan", "cantidad": "2" }`
+y `PATCH /api/lista-compra/:id` recibe `{ "comprado": true }`.
+
+### Avisos de caducidad
+
+`PUT /api/preferencias/avisos` recibe:
+
+```json
+{ "activo": true, "diasAntelacion": 3 }
+```
+
+`POST /api/tareas/avisos-caducidad` devuelve un recuento:
+
+```json
+{ "pendientes": 2, "enviados": 2, "fallidos": 0 }
+```
 
 ### Cálculo de bloqueo
 
@@ -617,8 +714,29 @@ Las credenciales privadas se referencian desde Secret Manager:
 | `MONGODB_URI` | `mongodb-uri` |
 | `SMTP_PASSWORD` | `smtp-password` |
 | `GOOGLE_CLIENT_SECRET` | `google-client-secret` |
+| `TAREAS_TOKEN` | `tareas-token` |
 
 Cloud Run debe referenciar la versión correspondiente de cada secreto.
+
+### Programación de los avisos de caducidad
+
+Crear el secreto y un trabajo de Cloud Scheduler que llame cada día
+a las 8:00 (hora de España) a la ruta de avisos:
+
+```powershell
+# Generar el token y guardarlo en Secret Manager
+$token = -join ((1..48) | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) })
+$token | gcloud secrets create tareas-token --data-file=-
+
+# Tras añadir TAREAS_TOKEN al servicio de Cloud Run:
+gcloud scheduler jobs create http avisos-caducidad `
+  --location=europe-west1 `
+  --schedule="0 8 * * *" `
+  --time-zone="Europe/Madrid" `
+  --http-method=POST `
+  --uri="https://despensa-inteligente-599179699590.europe-west1.run.app/api/tareas/avisos-caducidad" `
+  --headers="Authorization=Bearer $token"
+```
 
 Su cuenta de servicio necesita el rol
 **Secret Manager Secret Accessor** sobre esos secretos.

@@ -55,6 +55,43 @@ class ClienteRest {
     );
   }
 
+  // Lista de la compra
+  obtenerListaCompra() {
+    return this.solicitar("/lista-compra");
+  }
+
+  agregarElementoLista(elemento) {
+    return this.solicitar("/lista-compra", "POST", elemento);
+  }
+
+  marcarElementoLista(id, comprado) {
+    return this.solicitar(
+      `/lista-compra/${encodeURIComponent(id)}`,
+      "PATCH",
+      { comprado }
+    );
+  }
+
+  eliminarElementoLista(id) {
+    return this.solicitar(
+      `/lista-compra/${encodeURIComponent(id)}`,
+      "DELETE"
+    );
+  }
+
+  vaciarComprados() {
+    return this.solicitar("/lista-compra/comprados", "DELETE");
+  }
+
+  // Preferencias de los avisos de caducidad
+  obtenerAvisos() {
+    return this.solicitar("/preferencias/avisos");
+  }
+
+  guardarAvisos(preferencias) {
+    return this.solicitar("/preferencias/avisos", "PUT", preferencias);
+  }
+
   // Alimentos de la despensa
   listarAlimentos() {
     return this.solicitar("/alimentos");

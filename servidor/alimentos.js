@@ -11,6 +11,11 @@ const CATEGORIAS = [
   "otros"
 ];
 
+// Dónde se guarda el alimento. Los alimentos anteriores a esta
+// funcionalidad no tienen ubicación y se consideran de la despensa.
+const UBICACIONES = ["nevera", "congelador", "despensa"];
+const UBICACION_POR_DEFECTO = "despensa";
+
 const DIAS_AVISO_CADUCIDAD = 3;
 const MAX_ALIMENTOS_POR_USUARIO = 500;
 const ZONA_HORARIA = "Europe/Madrid";
@@ -108,6 +113,12 @@ function validarDatosAlimento(datos) {
     return { error: "La categoría no es válida" };
   }
 
+  const ubicacion = datos.ubicacion ?? UBICACION_POR_DEFECTO;
+
+  if (!UBICACIONES.includes(ubicacion)) {
+    return { error: "La ubicación no es válida" };
+  }
+
   let fechaCaducidad = datos.fechaCaducidad ?? null;
 
   if (fechaCaducidad === "") {
@@ -120,15 +131,48 @@ function validarDatosAlimento(datos) {
     };
   }
 
+  // Cantidad a partir de la cual el alimento pasa a la lista de la compra.
+  let stockMinimo = datos.stockMinimo ?? null;
+
+  if (stockMinimo === "") {
+    stockMinimo = null;
+  }
+
+  if (stockMinimo !== null) {
+    if (
+      typeof stockMinimo !== "number" ||
+      !Number.isFinite(stockMinimo) ||
+      stockMinimo < 0 ||
+      stockMinimo > 100000
+    ) {
+      return { error: "El mínimo debe ser un número entre 0 y 100000" };
+    }
+
+    if (unidad === "unidades" && !Number.isInteger(stockMinimo)) {
+      return { error: "El mínimo en unidades debe ser un número entero" };
+    }
+
+    stockMinimo = Math.round(stockMinimo * 1000) / 1000;
+  }
+
   return {
     datos: {
       nombre,
       cantidad: Math.round(cantidad * 1000) / 1000,
       unidad,
       categoria,
-      fechaCaducidad
+      ubicacion,
+      fechaCaducidad,
+      stockMinimo
     }
   };
+}
+
+function bajoMinimo(alimento) {
+  return (
+    typeof alimento.stockMinimo === "number" &&
+    alimento.cantidad <= alimento.stockMinimo
+  );
 }
 
 // Ordena por caducidad (primero lo que antes caduca) y después por nombre.
@@ -147,6 +191,8 @@ function compararAlimentos(a, b) {
 }
 
 module.exports = {
+  UBICACIONES,
+  UBICACION_POR_DEFECTO,
   UNIDADES,
   CATEGORIAS,
   DIAS_AVISO_CADUCIDAD,
@@ -155,5 +201,6 @@ module.exports = {
   fechaLocal,
   estadoCaducidad,
   validarDatosAlimento,
-  compararAlimentos
+  compararAlimentos,
+  bajoMinimo
 };

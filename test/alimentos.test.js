@@ -97,7 +97,9 @@ test("Validación: limpia los datos y aplica valores por defecto", () => {
     cantidad: 1,
     unidad: "unidades",
     categoria: "otros",
-    fechaCaducidad: null
+    ubicacion: "despensa",
+    fechaCaducidad: null,
+    stockMinimo: null
   });
 });
 
@@ -158,7 +160,12 @@ test("Alimentos: crea y lista con estado de caducidad", async () => {
   );
 
   assert.equal(alimentos.length, 1);
-  assert.deepEqual(resumen, { total: 1, caducados: 0, proximos: 1 });
+  assert.deepEqual(resumen, {
+    total: 1,
+    caducados: 0,
+    proximos: 1,
+    porUbicacion: { nevera: 0, congelador: 0, despensa: 1 }
+  });
 });
 
 test("Alimentos: ordena por caducidad y deja al final los que no tienen fecha", async () => {
@@ -183,7 +190,12 @@ test("Alimentos: ordena por caducidad y deja al final los que no tienen fecha", 
     alimentos.map(a => a.nombre),
     ["Queso", "Yogur", "Sal"]
   );
-  assert.deepEqual(resumen, { total: 3, caducados: 1, proximos: 0 });
+  assert.deepEqual(resumen, {
+    total: 3,
+    caducados: 1,
+    proximos: 0,
+    porUbicacion: { nevera: 0, congelador: 0, despensa: 3 }
+  });
 });
 
 test("Alimentos: cada usuario solo ve y modifica los suyos", async () => {
@@ -287,4 +299,84 @@ test("Alimentos: limita el número de alimentos por usuario", async () => {
     sistema.crearAlimento("ana@example.com", leche),
     { estadoHTTP: 409 }
   );
+});
+
+test("Ubicaciones: valida y usa despensa por defecto", () => {
+  for (const ubicacion of ["nevera", "congelador", "despensa"]) {
+    assert.equal(
+      validarDatosAlimento({ nombre: "Pan", cantidad: 1, ubicacion })
+        .datos.ubicacion,
+      ubicacion
+    );
+  }
+
+  for (const ubicacion of ["armario", "", 3, null]) {
+    const resultado = validarDatosAlimento({
+      nombre: "Pan", cantidad: 1, ubicacion
+    });
+
+    // null equivale a no indicarla: se usa la despensa.
+    if (ubicacion === null) {
+      assert.equal(resultado.datos.ubicacion, "despensa");
+    } else {
+      assert.ok(resultado.error, `Debería rechazar ${ubicacion}`);
+    }
+  }
+});
+
+test("Ubicaciones: cuenta los alimentos de cada sitio", async () => {
+  const { sistema } = await preparar();
+  const email = "ana@example.com";
+
+  await sistema.crearAlimento(email, { nombre: "Leche", cantidad: 1, ubicacion: "nevera" });
+  await sistema.crearAlimento(email, { nombre: "Yogur", cantidad: 4, ubicacion: "nevera" });
+  await sistema.crearAlimento(email, { nombre: "Guisantes", cantidad: 1, ubicacion: "congelador" });
+  await sistema.crearAlimento(email, { nombre: "Arroz", cantidad: 1 });
+
+  const { resumen, alimentos } = await sistema.listarAlimentos(email, AHORA);
+
+  assert.deepEqual(resumen.porUbicacion, {
+    nevera: 2,
+    congelador: 1,
+    despensa: 1
+  });
+  assert.equal(alimentos.find(a => a.nombre === "Arroz").ubicacion, "despensa");
+});
+
+test("Ubicaciones: los alimentos antiguos sin ubicación son de la despensa", async () => {
+  const { cad, sistema } = await preparar();
+
+  // Alimento guardado antes de existir el campo.
+  await cad.guardarAlimento({
+    id: "44444444-4444-4444-8444-444444444444",
+    usuarioId: "11111111-1111-4111-8111-111111111111",
+    nombre: "Lentejas",
+    cantidad: 1,
+    unidad: "kg",
+    categoria: "despensa seca",
+    fechaCaducidad: null,
+    creadoEn: AHORA,
+    actualizadoEn: AHORA
+  });
+
+  const { alimentos, resumen } = await sistema.listarAlimentos(
+    "ana@example.com",
+    AHORA
+  );
+
+  assert.equal(alimentos[0].ubicacion, "despensa");
+  assert.equal(resumen.porUbicacion.despensa, 1);
+});
+
+test("Ubicaciones: se puede mover un alimento", async () => {
+  const { sistema } = await preparar();
+  const email = "ana@example.com";
+  const datos = { nombre: "Pan", cantidad: 1, ubicacion: "despensa" };
+
+  const pan = await sistema.crearAlimento(email, datos);
+  const movido = await sistema.actualizarAlimento(
+    email, pan.id, { ...datos, ubicacion: "congelador" }
+  );
+
+  assert.equal(movido.ubicacion, "congelador");
 });
