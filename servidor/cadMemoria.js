@@ -34,6 +34,25 @@ class CadMemoria {
     return this.listaCompra.delete(this.claveAlimento(usuarioId, id));
   }
 
+  // Pasa todos los alimentos y la lista de una despensa a otra.
+  async moverDespensa(origen, destino) {
+    let alimentos = 0;
+
+    for (const coleccion of [this.alimentos, this.listaCompra]) {
+      for (const [clave, elemento] of [...coleccion]) {
+        if (elemento.usuarioId !== origen) continue;
+
+        coleccion.delete(clave);
+        const movido = { ...elemento, usuarioId: destino };
+        coleccion.set(this.claveAlimento(destino, movido.id), movido);
+
+        if (coleccion === this.alimentos) alimentos++;
+      }
+    }
+
+    return alimentos;
+  }
+
   async eliminarElementosComprados(usuarioId) {
     let eliminados = 0;
 

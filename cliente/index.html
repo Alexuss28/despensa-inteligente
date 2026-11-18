@@ -15,6 +15,7 @@
   <script src="/despensa.js" defer></script>
   <script src="/escaner.js" defer></script>
   <script src="/recetas.js" defer></script>
+  <script src="/hogar.js" defer></script>
   <script src="/avisos.js" defer></script>
   <script src="/listaCompra.js" defer></script>
   <script src="/googleOneTap.js" defer></script>
@@ -314,6 +315,38 @@
             <button id="btn-vaciar-comprados" type="button" class="secundario boton-pequeno" hidden>
               Quitar los comprados
             </button>
+          </section>
+
+          <section id="hogar" class="tarjeta tarjeta-lateral" aria-labelledby="titulo-hogar">
+            <h3 id="titulo-hogar">Tu hogar</h3>
+            <p id="descripcion-hogar" class="ayuda"></p>
+
+            <ul id="miembros-hogar" class="miembros-hogar" aria-label="Personas que comparten la despensa" hidden></ul>
+
+            <div class="acciones-hogar">
+              <button id="btn-invitar-hogar" type="button" class="secundario boton-pequeno">Invitar a alguien</button>
+            </div>
+
+            <div id="codigo-invitacion" class="codigo-invitacion" hidden>
+              <p class="ayuda">Código de invitación</p>
+              <div class="fila-codigo-invitacion">
+                <output id="texto-codigo-invitacion" class="texto-codigo" aria-live="polite"></output>
+                <button id="btn-copiar-codigo" type="button" class="secundario boton-pequeno">Copiar</button>
+              </div>
+            </div>
+            <p id="caducidad-codigo-invitacion" class="ayuda"></p>
+
+            <form id="form-unirse-hogar" class="form-unirse" novalidate>
+              <label for="codigo-unirse">¿Te han invitado? Escribe el código</label>
+              <div class="fila-codigo">
+                <input id="codigo-unirse" type="text" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="ABCD-EFGH">
+                <button type="submit" class="secundario">Unirme</button>
+              </div>
+            </form>
+
+            <p id="estado-hogar" role="status" aria-live="polite"></p>
+
+            <button id="btn-salir-hogar" type="button" class="enlace enlace-peligro" hidden>Salir del hogar</button>
           </section>
 
           <section id="avisos" class="tarjeta tarjeta-lateral" aria-labelledby="titulo-avisos">

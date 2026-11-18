@@ -235,4 +235,23 @@ test.describe("Integración Sistema + CadMongo", { skip: motivoOmision }, () => 
       { eliminados: 1 }
     );
   });
+
+  test("hogar compartido: mover la despensa al unirse", async () => {
+    await cuentaActiva("ana@example.com");
+    await cuentaActiva("luis@example.com");
+
+    await sistema.crearAlimento("luis@example.com", { nombre: "Pan", cantidad: 1 });
+    await sistema.agregarElementoLista("luis@example.com", { nombre: "Café" });
+
+    const { codigo } = await sistema.crearInvitacionHogar("ana@example.com");
+    const hogar = await sistema.unirseHogar("luis@example.com", codigo);
+
+    assert.equal(hogar.alimentosMovidos, 1);
+
+    const deAna = await sistema.listarAlimentos("ana@example.com");
+    assert.deepEqual(deAna.alimentos.map(a => a.nombre), ["Pan"]);
+
+    const lista = await sistema.obtenerListaCompra("ana@example.com");
+    assert.deepEqual(lista.manuales.map(e => e.nombre), ["Café"]);
+  });
 });

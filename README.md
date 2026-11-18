@@ -393,6 +393,28 @@ Sin `TAREAS_TOKEN` (o con menos de 32 caracteres), la ruta devuelve 503.
   ingredientes obligatorios que no tienes, sin repetir los que ya
   están pendientes.
 
+### Sprint 4: despensa compartida (hogar)
+
+- Desde la tarjeta **Tu hogar**, cualquier persona puede invitar a quien
+  vive con ella con un **código de invitación** (por ejemplo `ABCD-EFGH`).
+- El código sirve **una sola vez** y caduca a las **48 horas**. Solo se
+  guarda su huella SHA-256, nunca el código.
+- Todos los miembros comparten alimentos y lista de la compra, con los
+  mismos permisos. Las preferencias de los avisos son de cada persona.
+- Al unirse, si nadie más usaba tu despensa, tus alimentos y tu lista se
+  suman a la compartida. Si compartías otra, se quedan allí.
+- Cualquier miembro puede salir o quitar a otro. Quien sale empieza con
+  una despensa vacía; los datos se quedan con el resto.
+- Máximo 6 miembros por hogar y 5 intentos de código cada 10 minutos
+  por usuario.
+- Los cambios de otros miembros se ven al recargar la página
+  (no hay actualización en tiempo real).
+
+Sin migración de datos: los alimentos siguen guardando su despensa en
+el campo `usuarioId`, que ahora es el identificador de la despensa.
+Cada usuario tiene `hogarId` solo si comparte; si no, su despensa es
+la de su propio `id`.
+
 ## Persistencia
 
 Los usuarios, los alimentos, la lista de la compra y las sesiones se
@@ -441,6 +463,11 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | PUT | `/api/alimentos/:id` | Propietario del alimento |
 | PATCH | `/api/alimentos/:id/cantidad` | Propietario del alimento |
 | GET | `/api/productos/:codigo` | Usuario autenticado (10 por minuto) |
+| GET | `/api/hogar` | Usuario autenticado |
+| POST | `/api/hogar/invitacion` | Usuario autenticado |
+| POST | `/api/hogar/unirse` | Usuario autenticado (5 intentos cada 10 min) |
+| POST | `/api/hogar/salir` | Miembro de un hogar compartido |
+| DELETE | `/api/hogar/miembros/:email` | Miembro del mismo hogar |
 | GET | `/api/recetas` | Usuario autenticado |
 | POST | `/api/recetas/:id/lista-compra` | Usuario autenticado |
 | DELETE | `/api/alimentos/:id` | Propietario del alimento |
