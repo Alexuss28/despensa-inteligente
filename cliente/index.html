@@ -16,6 +16,7 @@
   <script src="/escaner.js" defer></script>
   <script src="/recetas.js" defer></script>
   <script src="/hogar.js" defer></script>
+  <script src="/estadisticas.js" defer></script>
   <script src="/avisos.js" defer></script>
   <script src="/listaCompra.js" defer></script>
   <script src="/googleOneTap.js" defer></script>
@@ -386,7 +387,81 @@
         <p id="estado-recetas" role="status" aria-live="polite"></p>
         <div id="lista-recetas" class="rejilla-recetas"></div>
       </section>
+
+      <section id="estadisticas" class="seccion-estadisticas" aria-labelledby="titulo-estadisticas">
+        <div class="cabecera-estadisticas">
+          <div>
+            <h2 id="titulo-estadisticas" class="titulo-seccion">Tu aprovechamiento</h2>
+            <p class="entradilla-seccion">Últimos 6 meses.</p>
+          </div>
+
+          <div class="descargas">
+            <a class="boton-enlace" href="/api/exportar/despensa.csv" download>Descargar despensa (CSV)</a>
+            <a class="boton-enlace" href="/api/exportar/historial.csv" download>Descargar historial (CSV)</a>
+          </div>
+        </div>
+
+        <div id="cifras-estadisticas" class="cifras"></div>
+        <p id="estado-estadisticas" role="status" aria-live="polite"></p>
+
+        <div id="contenido-estadisticas" class="contenido-estadisticas" hidden>
+          <div class="tarjeta tarjeta-grafico">
+            <div class="cabecera-grafico">
+              <h3>Terminados y tirados por mes</h3>
+              <ul class="leyenda" aria-label="Leyenda">
+                <li><span class="muestra muestra-terminados" aria-hidden="true"></span>Terminados</li>
+                <li><span class="muestra muestra-tirados" aria-hidden="true"></span>Tirados</li>
+              </ul>
+            </div>
+
+            <div class="grafico">
+              <span id="eje-maximo" class="eje-maximo" aria-hidden="true"></span>
+              <div id="grafico-meses" class="grafico-meses" role="group" aria-label="Alimentos terminados y tirados por mes"></div>
+              <div id="tooltip-grafico" class="tooltip-grafico" role="status" hidden></div>
+            </div>
+
+            <details class="ver-tabla">
+              <summary>Ver como tabla</summary>
+              <div class="tabla-contenedor">
+                <table id="tabla-estadisticas">
+                  <caption class="solo-lector">Alimentos por mes</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Mes</th>
+                      <th scope="col">Terminados</th>
+                      <th scope="col">Tirados</th>
+                      <th scope="col">Consumos</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+
+          <div id="bloque-mas-tirados" class="tarjeta tarjeta-ranking">
+            <h3>Lo que más se tira</h3>
+            <ol id="mas-tirados" class="mas-tirados"></ol>
+            <p class="ayuda">Pista: compra menos cantidad de estos productos o fíjales un aviso de caducidad.</p>
+          </div>
+        </div>
+      </section>
     </section>
+
+    <dialog id="dialogo-eliminar" class="dialogo" aria-labelledby="titulo-eliminar">
+      <form method="dialog" class="form-eliminar">
+        <h2 id="titulo-eliminar">¿Qué ha pasado con este alimento?</h2>
+        <p class="ayuda">Tu respuesta se usa para calcular cuánto aprovechas y cuánto tiras.</p>
+
+        <div class="opciones-eliminar">
+          <button id="btn-eliminar-terminado" value="terminado">Lo hemos terminado</button>
+          <button value="tirado" class="peligro">Se ha tirado</button>
+          <button value="error" class="secundario">Lo añadí por error</button>
+        </div>
+
+        <button value="cancelar" class="enlace">Cancelar</button>
+      </form>
+    </dialog>
 
     <dialog id="dialogo-escaner" class="dialogo" aria-labelledby="titulo-escaner">
       <div class="dialogo-cabecera">

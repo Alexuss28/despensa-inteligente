@@ -27,6 +27,8 @@ function sesionCaducada() {
 
 const listaCompra = new ListaCompra(rest, { mostrarMensaje, sesionCaducada });
 
+const estadisticas = new Estadisticas(rest, { sesionCaducada });
+
 const recetas = new Recetas(rest, {
   mostrarMensaje,
   sesionCaducada,
@@ -36,7 +38,11 @@ const recetas = new Recetas(rest, {
 const despensa = new Despensa(rest, {
   mostrarMensaje,
   sesionCaducada,
-  alCambiar: () => Promise.all([listaCompra.cargar(), recetas.cargar()])
+  alCambiar: () => Promise.all([
+    listaCompra.cargar(),
+    recetas.cargar(),
+    estadisticas.cargar()
+  ])
 });
 const avisos = new Avisos(rest, { mostrarMensaje, sesionCaducada });
 
@@ -107,6 +113,7 @@ function mostrarAcceso() {
   listaCompra.limpiar();
   recetas.limpiar();
   hogar.limpiar();
+  estadisticas.limpiar();
   avisos.limpiar();
 }
 

@@ -31,6 +31,12 @@ class ErrorNegocio extends Error {
 }
 
 const { codigoValido } = require("./productos");
+const {
+  MOTIVOS_ELIMINACION,
+  calcularEstadisticas,
+  csvDespensa,
+  csvHistorial
+} = require("./estadisticas");
 const { sugerirRecetas, evaluarReceta, buscarReceta, disponibles, palabras } = require("./recetas");
 const { createHash, randomInt } = require("node:crypto");
 
@@ -559,9 +565,15 @@ class Sistema {
     const actualizado = { ...existente, cantidad, actualizadoEn: ahora };
     await this.cad.guardarAlimento(actualizado);
 
+    const consumido = delta < 0 ? redondear(existente.cantidad - cantidad) : 0;
+
+    if (consumido > 0) {
+      await this.registrarMovimiento(usuario.despensaId, existente, "consumo", consumido, ahora);
+    }
+
     return {
       alimento: this.alimentoPublico(actualizado, ahora),
-      consumido: delta < 0 ? redondear(existente.cantidad - cantidad) : 0
+      consumido
     };
   }
 
@@ -682,17 +694,74 @@ class Sistema {
     return { agregados, yaEstaban };
   }
 
-  async eliminarAlimento(emailSolicitante, idAlimento) {
+  // El motivo alimenta las estadísticas: «terminado», «tirado» o
+  // «error» (se añadió por equivocación y no cuenta).
+  async eliminarAlimento(emailSolicitante, idAlimento, motivo = "error", ahora = new Date()) {
     const usuario = await this.usuarioConDespensa(emailSolicitante);
     const id = this.validarIdAlimento(idAlimento);
+    const motivoFinal = motivo ?? "error";
 
-    const eliminado = await this.cad.eliminarAlimento(usuario.despensaId, id);
+    if (!MOTIVOS_ELIMINACION.includes(motivoFinal)) {
+      throw new ErrorNegocio("El motivo debe ser terminado, tirado o error", 400);
+    }
+
+    const existente = await this.cad.buscarAlimento(usuario.despensaId, id);
+    const eliminado = existente &&
+      await this.cad.eliminarAlimento(usuario.despensaId, id);
 
     if (!eliminado) {
       throw new ErrorNegocio("El alimento no existe", 404);
     }
 
+    if (motivoFinal !== "error") {
+      await this.registrarMovimiento(
+        usuario.despensaId, existente, motivoFinal, existente.cantidad, ahora
+      );
+    }
+
     return { mensaje: "Alimento eliminado" };
+  }
+
+  // ---------------------------------------------------------------
+  // Estadísticas y exportación (Sprint 4)
+  // ---------------------------------------------------------------
+
+  async registrarMovimiento(despensaId, alimento, tipo, cantidad, ahora) {
+    await this.cad.guardarMovimiento({
+      id: randomUUID(),
+      usuarioId: despensaId,
+      alimentoId: alimento.id,
+      nombre: alimento.nombre,
+      categoria: alimento.categoria,
+      unidad: alimento.unidad,
+      tipo,
+      cantidad,
+      caducado: estadoCaducidad(alimento.fechaCaducidad, ahora).estado === "caducado",
+      fecha: ahora
+    });
+  }
+
+  async obtenerEstadisticas(emailSolicitante, meses = 6, ahora = new Date()) {
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
+    const numero = Number(meses);
+
+    if (!Number.isInteger(numero) || numero < 1 || numero > 12) {
+      throw new ErrorNegocio("El periodo debe estar entre 1 y 12 meses", 400);
+    }
+
+    const movimientos = await this.cad.listarMovimientos(usuario.despensaId);
+
+    return calcularEstadisticas(movimientos, { ahora, meses: numero });
+  }
+
+  async exportarDespensaCsv(emailSolicitante, ahora = new Date()) {
+    const { alimentos } = await this.listarAlimentos(emailSolicitante, ahora);
+    return csvDespensa(alimentos);
+  }
+
+  async exportarHistorialCsv(emailSolicitante) {
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
+    return csvHistorial(await this.cad.listarMovimientos(usuario.despensaId));
   }
 
   // ---------------------------------------------------------------

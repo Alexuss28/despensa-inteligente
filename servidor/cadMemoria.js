@@ -3,6 +3,17 @@ class CadMemoria {
     this.usuarios = new Map();
     this.alimentos = new Map();
     this.listaCompra = new Map();
+    this.movimientos = [];
+  }
+
+  async guardarMovimiento(movimiento) {
+    this.movimientos.push({ ...movimiento });
+  }
+
+  async listarMovimientos(usuarioId) {
+    return this.movimientos
+      .filter(movimiento => movimiento.usuarioId === usuarioId)
+      .map(movimiento => ({ ...movimiento }));
   }
 
   // Lista de la compra: misma clave que los alimentos.
@@ -48,6 +59,10 @@ class CadMemoria {
 
         if (coleccion === this.alimentos) alimentos++;
       }
+    }
+
+    for (const movimiento of this.movimientos) {
+      if (movimiento.usuarioId === origen) movimiento.usuarioId = destino;
     }
 
     return alimentos;

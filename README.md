@@ -415,11 +415,31 @@ el campo `usuarioId`, que ahora es el identificador de la despensa.
 Cada usuario tiene `hogarId` solo si comparte; si no, su despensa es
 la de su propio `id`.
 
+### Sprint 4: estadísticas de desperdicio y exportación
+
+- Al eliminar un alimento, un diálogo pregunta qué ha pasado:
+  **Lo hemos terminado**, **Se ha tirado** o **Lo añadí por error**
+  (este último no cuenta en las estadísticas).
+- Cada gasto con el botón **−** también queda registrado.
+- La sección **Tu aprovechamiento** muestra, para los últimos 6 meses:
+  - el porcentaje aprovechado (terminados entre terminados y tirados),
+  - cuántos alimentos se han terminado y tirado, y cuántos de los
+    tirados ya estaban caducados,
+  - un gráfico mensual de terminados frente a tirados, con la tabla
+    equivalente y la información también accesible con el teclado,
+  - los 5 productos que más se tiran (agrupando «Yogur» y «Yogures»).
+- Botones para descargar la despensa y el historial en CSV, preparados
+  para Excel en español (separador `;`, coma decimal y acentos).
+  Los textos que empiezan por `=`, `+`, `-` o `@` se protegen para que
+  la hoja de cálculo no los ejecute como fórmulas.
+- El historial pertenece a la despensa, así que se comparte con el hogar.
+- Colores del gráfico validados para daltonismo y contraste.
+
 ## Persistencia
 
-Los usuarios, los alimentos, la lista de la compra y las sesiones se
-almacenan en las colecciones `usuarios`, `alimentos`, `listaCompra`
-y `sesiones` de la base `despensa_inteligente`.
+Los usuarios, los alimentos, la lista de la compra, el historial y las
+sesiones se almacenan en las colecciones `usuarios`, `alimentos`,
+`listaCompra`, `movimientos` y `sesiones` de la base `despensa_inteligente`.
 
 Cada alimento guarda el `id` de su propietario en `usuarioId`.
 El índice único `{ usuarioId, id }` acelera las consultas por usuario.
@@ -468,9 +488,12 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | POST | `/api/hogar/unirse` | Usuario autenticado (5 intentos cada 10 min) |
 | POST | `/api/hogar/salir` | Miembro de un hogar compartido |
 | DELETE | `/api/hogar/miembros/:email` | Miembro del mismo hogar |
+| GET | `/api/estadisticas?meses=6` | Usuario autenticado (1 a 12 meses) |
+| GET | `/api/exportar/despensa.csv` | Usuario autenticado |
+| GET | `/api/exportar/historial.csv` | Usuario autenticado |
 | GET | `/api/recetas` | Usuario autenticado |
 | POST | `/api/recetas/:id/lista-compra` | Usuario autenticado |
-| DELETE | `/api/alimentos/:id` | Propietario del alimento |
+| DELETE | `/api/alimentos/:id?motivo=terminado` | Propietario del alimento; motivo `terminado`, `tirado` o `error` (por defecto) |
 | POST | `/api/prueba/bloqueo` | Público; ejercicio técnico de cálculo de bloqueo |
 
 ### Registro y confirmación

@@ -8,6 +8,7 @@ class CadMongo {
     this.usuarios = baseDatos.collection("usuarios");
     this.alimentos = baseDatos.collection("alimentos");
     this.listaCompra = baseDatos.collection("listaCompra");
+    this.movimientos = baseDatos.collection("movimientos");
   }
 
   // Crea un índice si no existe. Si ya hay uno equivalente creado
@@ -53,6 +54,12 @@ class CadMongo {
       this.listaCompra,
       { usuarioId: 1, id: 1 },
       { unique: true }
+    );
+
+    await CadMongo.asegurarIndice(
+      this.movimientos,
+      { usuarioId: 1, fecha: -1 },
+      {}
     );
   }
 
@@ -255,6 +262,18 @@ class CadMongo {
     return resultado.deletedCount === 1;
   }
 
+  // Historial de consumos y desperdicio.
+  async guardarMovimiento(movimiento) {
+    const { _id, ...datos } = movimiento;
+    await this.movimientos.insertOne(datos);
+  }
+
+  async listarMovimientos(usuarioId) {
+    return this.movimientos
+      .find({ usuarioId }, { projection: { _id: 0 } })
+      .toArray();
+  }
+
   // Pasa todos los alimentos y la lista de una despensa a otra.
   async moverDespensa(origen, destino) {
     const resultado = await this.alimentos.updateMany(
@@ -263,6 +282,11 @@ class CadMongo {
     );
 
     await this.listaCompra.updateMany(
+      { usuarioId: origen },
+      { $set: { usuarioId: destino } }
+    );
+
+    await this.movimientos.updateMany(
       { usuarioId: origen },
       { $set: { usuarioId: destino } }
     );

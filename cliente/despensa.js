@@ -574,21 +574,46 @@ class Despensa {
     this.errorFormulario.textContent = "";
   }
 
+  // Pregunta por qué se elimina: terminado, tirado o error.
+  // Devuelve null si se cancela (botón Cancelar o tecla Escape).
+  preguntarMotivo(alimento) {
+    const dialogo = document.querySelector("#dialogo-eliminar");
+    dialogo.querySelector("h2").textContent = `¿Qué ha pasado con «${alimento.nombre}»?`;
+    dialogo.returnValue = "";
+
+    return new Promise(resolver => {
+      dialogo.addEventListener("close", () => {
+        const motivo = dialogo.returnValue;
+        resolver(["terminado", "tirado", "error"].includes(motivo) ? motivo : null);
+      }, { once: true });
+
+      dialogo.showModal();
+      document.querySelector("#btn-eliminar-terminado").focus();
+    });
+  }
+
   async eliminar(alimento, boton) {
-    if (!window.confirm(`¿Eliminar «${alimento.nombre}» de tu despensa?`)) {
+    const motivo = await this.preguntarMotivo(alimento);
+
+    if (!motivo) {
+      boton.focus();
       return;
     }
 
     boton.disabled = true;
 
     try {
-      await this.rest.eliminarAlimento(alimento.id);
+      await this.rest.eliminarAlimento(alimento.id, motivo);
 
       if (this.editandoId === alimento.id) {
         this.reiniciarFormulario();
       }
 
-      this.mostrarMensaje(`«${alimento.nombre}» eliminado`);
+      this.mostrarMensaje({
+        terminado: `«${alimento.nombre}» terminado`,
+        tirado: `«${alimento.nombre}» marcado como tirado`,
+        error: `«${alimento.nombre}» eliminado`
+      }[motivo]);
       await this.cargar();
     } catch (error) {
       boton.disabled = false;

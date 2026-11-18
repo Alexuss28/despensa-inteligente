@@ -30,6 +30,7 @@ test.describe("Integración Sistema + CadMongo", { skip: motivoOmision }, () => 
     await cad.usuarios.deleteMany({});
     await cad.alimentos.deleteMany({});
     await cad.listaCompra.deleteMany({});
+    await cad.movimientos.deleteMany({});
   }
 
   async function cuentaActiva(email) {
@@ -253,5 +254,21 @@ test.describe("Integración Sistema + CadMongo", { skip: motivoOmision }, () => 
 
     const lista = await sistema.obtenerListaCompra("ana@example.com");
     assert.deepEqual(lista.manuales.map(e => e.nombre), ["Café"]);
+  });
+
+  test("estadísticas: los movimientos se guardan y se leen sin _id", async () => {
+    await cuentaActiva("ana@example.com");
+
+    const pan = await sistema.crearAlimento("ana@example.com", { nombre: "Pan", cantidad: 2 });
+    await sistema.ajustarCantidad("ana@example.com", pan.id, { delta: -1 });
+    await sistema.eliminarAlimento("ana@example.com", pan.id, "tirado");
+
+    const datos = await sistema.obtenerEstadisticas("ana@example.com", 1);
+    assert.equal(datos.totales.consumos, 1);
+    assert.equal(datos.totales.tirados, 1);
+
+    const csv = await sistema.exportarHistorialCsv("ana@example.com");
+    assert.match(csv, /Tirado;Pan;1;unidades/);
+    assert.ok(!csv.includes("_id"));
   });
 });
