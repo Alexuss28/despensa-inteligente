@@ -336,6 +336,24 @@ function crearApi(
     }
   });
 
+  router.get("/recetas", async (req, res, next) => {
+    try {
+      res.json(await sistema.obtenerRecetas(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/recetas/:id/lista-compra", async (req, res, next) => {
+    try {
+      res.json(
+        await sistema.agregarFaltantesALista(req.session.email, req.params.id)
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.get("/alimentos", async (req, res, next) => {
     try {
       res.json(await sistema.listarAlimentos(req.session.email));

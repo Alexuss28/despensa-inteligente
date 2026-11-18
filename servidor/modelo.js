@@ -31,6 +31,7 @@ class ErrorNegocio extends Error {
 }
 
 const { codigoValido } = require("./productos");
+const { sugerirRecetas, evaluarReceta, buscarReceta, disponibles, palabras } = require("./recetas");
 const DIAS_AVISO_POR_DEFECTO = 3;
 
 class Sistema {
@@ -581,6 +582,68 @@ class Sistema {
     }
 
     return { producto, enDespensa };
+  }
+
+  // ---------------------------------------------------------------
+  // Recetas (Sprint 4)
+  // ---------------------------------------------------------------
+
+  async alimentosPublicos(usuario, ahora) {
+    return (await this.cad.listarAlimentos(usuario.id))
+      .map(alimento => this.alimentoPublico(alimento, ahora));
+  }
+
+  async obtenerRecetas(emailSolicitante, ahora = new Date()) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const alimentos = await this.alimentosPublicos(usuario, ahora);
+
+    return {
+      recetas: sugerirRecetas(alimentos),
+      caducanPronto: alimentos.filter(a =>
+        a.estadoCaducidad === "proximo" && a.cantidad > 0
+      ).length
+    };
+  }
+
+  // Añade a la lista de la compra los ingredientes que faltan para una
+  // receta, sin repetir los que ya están pendientes en la lista.
+  async agregarFaltantesALista(emailSolicitante, idReceta, ahora = new Date()) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const receta = typeof idReceta === "string" ? buscarReceta(idReceta) : null;
+
+    if (!receta) {
+      throw new ErrorNegocio("La receta no existe", 404);
+    }
+
+    const alimentos = await this.alimentosPublicos(usuario, ahora);
+    const { faltan } = evaluarReceta(receta, disponibles(alimentos));
+
+    const clave = texto => palabras(texto).join(" ");
+    const pendientes = new Set(
+      (await this.cad.listarElementosLista(usuario.id))
+        .filter(elemento => !elemento.comprado)
+        .map(elemento => clave(elemento.nombre))
+    );
+
+    const agregados = [];
+    const yaEstaban = [];
+
+    for (const nombre of faltan) {
+      if (pendientes.has(clave(nombre))) {
+        yaEstaban.push(nombre);
+        continue;
+      }
+
+      await this.agregarElementoLista(
+        emailSolicitante,
+        { nombre, cantidad: `Para: ${receta.nombre}`.slice(0, 40) },
+        ahora
+      );
+
+      agregados.push(nombre);
+    }
+
+    return { agregados, yaEstaban };
   }
 
   async eliminarAlimento(emailSolicitante, idAlimento) {
