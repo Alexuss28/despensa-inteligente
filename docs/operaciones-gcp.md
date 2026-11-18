@@ -21,6 +21,9 @@ desplegando en Cloud Run cada cambio que se fusiona en `main`.
   - `roles/cloudscheduler.admin`: gestionar la tarea programada.
   - `roles/iam.serviceAccountUser` sobre la cuenta con la que se
     ejecuta Cloud Run, necesario para desplegar revisiones.
+  - `roles/artifactregistry.reader` solo sobre el repositorio
+    `cloud-run-source-deploy`, para que Cloud Run pueda leer la imagen
+    al crear una revisión.
 - El token de las tareas nunca aparece en los registros: el flujo
   lo oculta con `::add-mask::`.
 - Solo quien tiene permiso de escritura en el repositorio puede
@@ -44,7 +47,9 @@ desplegando en Cloud Run cada cambio que se fusiona en `main`.
 
 Estado actual: configuración realizada el 17/11/2026 en el proyecto
 `despensa-inteligente-511418` (número `599179699590`). Los valores
-ya están en el flujo.
+ya están en el flujo. `configurar-avisos` se ejecutó con éxito ese día:
+el secreto `tareas-token` existe, Cloud Run lo usa como `TAREAS_TOKEN`
+y la tarea `avisos-caducidad` se ejecuta a diario a las 8:00.
 
 ## Operaciones
 
