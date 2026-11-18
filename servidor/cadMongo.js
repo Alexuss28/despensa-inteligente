@@ -255,6 +255,21 @@ class CadMongo {
     return resultado.deletedCount === 1;
   }
 
+  // Pasa todos los alimentos y la lista de una despensa a otra.
+  async moverDespensa(origen, destino) {
+    const resultado = await this.alimentos.updateMany(
+      { usuarioId: origen },
+      { $set: { usuarioId: destino } }
+    );
+
+    await this.listaCompra.updateMany(
+      { usuarioId: origen },
+      { $set: { usuarioId: destino } }
+    );
+
+    return resultado.modifiedCount;
+  }
+
   async eliminarElementosComprados(usuarioId) {
     const resultado = await this.listaCompra.deleteMany({
       usuarioId,

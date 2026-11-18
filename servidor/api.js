@@ -336,6 +336,78 @@ function crearApi(
     }
   });
 
+  // Hogar compartido. Se limitan los intentos de unirse con un código
+  // para que no se puedan probar códigos a ciegas.
+  const intentosUnirse = new Map();
+
+  function puedeIntentarUnirse(email) {
+    const ahora = Date.now();
+    const recientes = (intentosUnirse.get(email) || [])
+      .filter(instante => ahora - instante < 10 * 60 * 1000);
+
+    if (recientes.length >= 5) {
+      intentosUnirse.set(email, recientes);
+      return false;
+    }
+
+    recientes.push(ahora);
+    intentosUnirse.set(email, recientes);
+
+    if (intentosUnirse.size > 1000) {
+      intentosUnirse.delete(intentosUnirse.keys().next().value);
+    }
+
+    return true;
+  }
+
+  router.get("/hogar", async (req, res, next) => {
+    try {
+      res.json(await sistema.obtenerHogar(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/hogar/invitacion", async (req, res, next) => {
+    try {
+      res.status(201).json(await sistema.crearInvitacionHogar(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/hogar/unirse", async (req, res, next) => {
+    try {
+      if (!puedeIntentarUnirse(req.session.email)) {
+        return res.status(429).json({
+          error: "Demasiados intentos. Espera unos minutos y revisa el código."
+        });
+      }
+
+      res.json(await sistema.unirseHogar(req.session.email, req.body?.codigo));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/hogar/salir", async (req, res, next) => {
+    try {
+      res.json(await sistema.salirHogar(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete("/hogar/miembros/:email", async (req, res, next) => {
+    try {
+      res.json(
+        await sistema.quitarMiembroHogar(req.session.email, req.params.email)
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.get("/recetas", async (req, res, next) => {
     try {
       res.json(await sistema.obtenerRecetas(req.session.email));

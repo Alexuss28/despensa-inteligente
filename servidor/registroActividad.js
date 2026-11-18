@@ -34,6 +34,14 @@ function identificarOperacion(req) {
 
   if (ruta === "/recetas") return "recetas";
 
+  if (ruta === "/hogar") return "hogar";
+
+  if (/^\/hogar\/(invitacion|unirse|salir)\/?$/.test(ruta)) {
+    return `hogar_${ruta.split("/")[2]}`;
+  }
+
+  if (/^\/hogar\/miembros\/[^/]+\/?$/.test(ruta)) return "hogar_quitar_miembro";
+
   if (/^\/recetas\/[^/]+\/lista-compra\/?$/.test(ruta)) return "receta_lista_compra";
 
   if (/^\/productos\/[^/]+\/?$/.test(ruta)) return "buscar_producto";

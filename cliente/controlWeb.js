@@ -40,6 +40,12 @@ const despensa = new Despensa(rest, {
 });
 const avisos = new Avisos(rest, { mostrarMensaje, sesionCaducada });
 
+const hogar = new Hogar(rest, {
+  mostrarMensaje,
+  sesionCaducada,
+  alCambiarDespensa: () => despensa.cargar()
+});
+
 const escaner = new Escaner(rest, {
   mostrarMensaje,
   sesionCaducada,
@@ -87,6 +93,7 @@ function mostrarUsuario(datos) {
   oneTap.ocultar();
   despensa.mostrar();
   avisos.mostrar();
+  hogar.cargar();
 }
 
 function mostrarAcceso() {
@@ -99,6 +106,7 @@ function mostrarAcceso() {
   despensa.limpiar();
   listaCompra.limpiar();
   recetas.limpiar();
+  hogar.limpiar();
   avisos.limpiar();
 }
 

@@ -852,6 +852,114 @@ button.boton-pequeno {
   margin-top: 12px;
 }
 
+/* Enlaces dentro de tarjetas claras (el estilo base es para el panel oscuro). */
+.tarjeta button.enlace {
+  color: var(--acento-oscuro);
+}
+
+.tarjeta button.enlace:hover {
+  color: var(--tinta);
+}
+
+.miembros-hogar {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.miembros-hogar li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.email-miembro {
+  overflow-wrap: anywhere;
+}
+
+button.enlace.enlace-peligro {
+  color: var(--rojo-texto);
+}
+
+button.enlace.enlace-peligro:hover {
+  color: var(--acento-oscuro);
+}
+
+.acciones-hogar {
+  margin-top: 12px;
+}
+
+.acciones-hogar button {
+  margin-top: 0;
+}
+
+.codigo-invitacion {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: var(--radio);
+  background: var(--neutro-fondo);
+}
+
+.codigo-invitacion .ayuda {
+  margin: 0 0 6px;
+}
+
+.fila-codigo-invitacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fila-codigo-invitacion button {
+  margin-top: 0;
+}
+
+.texto-codigo {
+  font-family: var(--titulos);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.fila-codigo-invitacion button {
+  white-space: nowrap;
+}
+
+#caducidad-codigo-invitacion {
+  margin: 8px 0 0;
+}
+
+#caducidad-codigo-invitacion:empty,
+#estado-hogar:empty {
+  display: none;
+}
+
+.form-unirse {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--linea);
+}
+
+.form-unirse .fila-codigo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+#estado-hogar {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+}
+
+#btn-salir-hogar {
+  margin-top: 8px;
+}
+
 #estado-avisos {
   margin: 0;
   font-size: 0.9rem;

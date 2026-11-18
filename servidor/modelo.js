@@ -32,7 +32,24 @@ class ErrorNegocio extends Error {
 
 const { codigoValido } = require("./productos");
 const { sugerirRecetas, evaluarReceta, buscarReceta, disponibles, palabras } = require("./recetas");
+const { createHash, randomInt } = require("node:crypto");
+
 const DIAS_AVISO_POR_DEFECTO = 3;
+
+// Hogar compartido
+const MAX_MIEMBROS_HOGAR = 6;
+const DURACION_INVITACION = 48 * 60 * 60 * 1000;
+const ALFABETO_INVITACION = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function normalizarCodigoInvitacion(codigo) {
+  return typeof codigo === "string"
+    ? codigo.toUpperCase().replace(/[\s-]+/g, "")
+    : "";
+}
+
+function hashInvitacion(codigo) {
+  return createHash("sha256").update(codigo).digest("hex");
+}
 
 class Sistema {
   constructor(cad) {
@@ -276,6 +293,25 @@ class Sistema {
 
     return { mensaje: "Usuario eliminado" };
   }
+  // Despensa que usa un usuario: la de su hogar o, si no comparte, la suya.
+  despensaIdDe(usuario) {
+    return usuario.hogarId ?? usuario.id;
+  }
+
+  async usuarioConDespensa(email) {
+    const normalizado = this.normalizarEmail(email);
+    const usuario = await this.cad.buscarPorEmail(normalizado);
+
+    if (!usuario || usuario.estado !== "activo") {
+      throw new ErrorNegocio("La sesión no es válida", 401);
+    }
+
+    return {
+      ...this.usuarioPublico(usuario),
+      despensaId: this.despensaIdDe(usuario)
+    };
+  }
+
     async obtenerUsuarioSesion(email) {
     const normalizado = this.normalizarEmail(email);
     const usuario = await this.cad.buscarPorEmail(normalizado);
@@ -413,8 +449,8 @@ class Sistema {
   }
 
   async listarAlimentos(emailSolicitante, ahora = new Date()) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
-    const alimentos = await this.cad.listarAlimentos(usuario.id);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
+    const alimentos = await this.cad.listarAlimentos(usuario.despensaId);
 
     const publicos = alimentos
       .sort(compararAlimentos)
@@ -438,10 +474,10 @@ class Sistema {
   }
 
   async crearAlimento(emailSolicitante, datos, ahora = new Date()) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const limpio = this.validarAlimento(datos);
 
-    const total = await this.cad.contarAlimentos(usuario.id);
+    const total = await this.cad.contarAlimentos(usuario.despensaId);
 
     if (total >= MAX_ALIMENTOS_POR_USUARIO) {
       throw new ErrorNegocio(
@@ -452,7 +488,7 @@ class Sistema {
 
     const alimento = {
       id: randomUUID(),
-      usuarioId: usuario.id,
+      usuarioId: usuario.despensaId,
       ...limpio,
       creadoEn: ahora,
       actualizadoEn: ahora
@@ -469,11 +505,11 @@ class Sistema {
     datos,
     ahora = new Date()
   ) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const id = this.validarIdAlimento(idAlimento);
     const limpio = this.validarAlimento(datos);
 
-    const existente = await this.cad.buscarAlimento(usuario.id, id);
+    const existente = await this.cad.buscarAlimento(usuario.despensaId, id);
 
     if (!existente) {
       throw new ErrorNegocio("El alimento no existe", 404);
@@ -496,11 +532,11 @@ class Sistema {
   // Suma o resta cantidad sin pasar por el formulario de edición.
   // Nunca baja de 0 y devuelve también cuánto se ha restado de verdad.
   async ajustarCantidad(emailSolicitante, idAlimento, datos, ahora = new Date()) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const id = this.validarIdAlimento(idAlimento);
     const delta = datos?.delta;
 
-    const existente = await this.cad.buscarAlimento(usuario.id, id);
+    const existente = await this.cad.buscarAlimento(usuario.despensaId, id);
 
     if (!existente) {
       throw new ErrorNegocio("El alimento no existe", 404);
@@ -532,13 +568,13 @@ class Sistema {
   // Busca un producto por código de barras en el catálogo externo e
   // indica si ya hay un alimento con ese código en la despensa.
   async buscarProducto(emailSolicitante, codigo, catalogo) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
 
     if (!codigoValido(codigo)) {
       throw new ErrorNegocio("El código de barras no es válido", 400);
     }
 
-    const existente = (await this.cad.listarAlimentos(usuario.id))
+    const existente = (await this.cad.listarAlimentos(usuario.despensaId))
       .find(alimento => alimento.codigoBarras === codigo);
 
     const enDespensa = existente
@@ -589,12 +625,12 @@ class Sistema {
   // ---------------------------------------------------------------
 
   async alimentosPublicos(usuario, ahora) {
-    return (await this.cad.listarAlimentos(usuario.id))
+    return (await this.cad.listarAlimentos(usuario.despensaId))
       .map(alimento => this.alimentoPublico(alimento, ahora));
   }
 
   async obtenerRecetas(emailSolicitante, ahora = new Date()) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const alimentos = await this.alimentosPublicos(usuario, ahora);
 
     return {
@@ -608,7 +644,7 @@ class Sistema {
   // Añade a la lista de la compra los ingredientes que faltan para una
   // receta, sin repetir los que ya están pendientes en la lista.
   async agregarFaltantesALista(emailSolicitante, idReceta, ahora = new Date()) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const receta = typeof idReceta === "string" ? buscarReceta(idReceta) : null;
 
     if (!receta) {
@@ -620,7 +656,7 @@ class Sistema {
 
     const clave = texto => palabras(texto).join(" ");
     const pendientes = new Set(
-      (await this.cad.listarElementosLista(usuario.id))
+      (await this.cad.listarElementosLista(usuario.despensaId))
         .filter(elemento => !elemento.comprado)
         .map(elemento => clave(elemento.nombre))
     );
@@ -647,10 +683,10 @@ class Sistema {
   }
 
   async eliminarAlimento(emailSolicitante, idAlimento) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const id = this.validarIdAlimento(idAlimento);
 
-    const eliminado = await this.cad.eliminarAlimento(usuario.id, id);
+    const eliminado = await this.cad.eliminarAlimento(usuario.despensaId, id);
 
     if (!eliminado) {
       throw new ErrorNegocio("El alimento no existe", 404);
@@ -739,7 +775,7 @@ class Sistema {
         continue;
       }
 
-      const alimentos = (await this.cad.listarAlimentos(usuario.id))
+      const alimentos = (await this.cad.listarAlimentos(this.despensaIdDe(usuario)))
         .sort(compararAlimentos)
         .map(alimento => this.alimentoPublico(alimento, ahora))
         .filter(alimento =>
@@ -781,9 +817,9 @@ class Sistema {
   }
 
   async obtenerListaCompra(emailSolicitante) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
 
-    const automaticos = (await this.cad.listarAlimentos(usuario.id))
+    const automaticos = (await this.cad.listarAlimentos(usuario.despensaId))
       .filter(bajoMinimo)
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
       .map(alimento => ({
@@ -795,7 +831,7 @@ class Sistema {
       }));
 
     // Primero lo pendiente y, dentro de cada grupo, por orden de alta.
-    const manuales = (await this.cad.listarElementosLista(usuario.id))
+    const manuales = (await this.cad.listarElementosLista(usuario.despensaId))
       .sort((a, b) =>
         Number(a.comprado) - Number(b.comprado) ||
         new Date(a.creadoEn) - new Date(b.creadoEn)
@@ -806,14 +842,14 @@ class Sistema {
   }
 
   async agregarElementoLista(emailSolicitante, datos, ahora = new Date()) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const resultado = validarElementoLista(datos);
 
     if (resultado.error) {
       throw new ErrorNegocio(resultado.error, 400);
     }
 
-    const total = await this.cad.contarElementosLista(usuario.id);
+    const total = await this.cad.contarElementosLista(usuario.despensaId);
 
     if (total >= MAX_ELEMENTOS_LISTA) {
       throw new ErrorNegocio(
@@ -824,7 +860,7 @@ class Sistema {
 
     const elemento = {
       id: randomUUID(),
-      usuarioId: usuario.id,
+      usuarioId: usuario.despensaId,
       ...resultado.datos,
       comprado: false,
       creadoEn: ahora
@@ -836,14 +872,14 @@ class Sistema {
   }
 
   async marcarElementoLista(emailSolicitante, idElemento, datos) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const id = this.validarIdAlimento(idElemento);
 
     if (!datos || typeof datos.comprado !== "boolean") {
       throw new ErrorNegocio("Indica si el elemento está comprado", 400);
     }
 
-    const elemento = await this.cad.buscarElementoLista(usuario.id, id);
+    const elemento = await this.cad.buscarElementoLista(usuario.despensaId, id);
 
     if (!elemento) {
       throw new ErrorNegocio("El elemento no existe", 404);
@@ -856,10 +892,10 @@ class Sistema {
   }
 
   async eliminarElementoLista(emailSolicitante, idElemento) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
     const id = this.validarIdAlimento(idElemento);
 
-    const eliminado = await this.cad.eliminarElementoLista(usuario.id, id);
+    const eliminado = await this.cad.eliminarElementoLista(usuario.despensaId, id);
 
     if (!eliminado) {
       throw new ErrorNegocio("El elemento no existe", 404);
@@ -869,10 +905,164 @@ class Sistema {
   }
 
   async eliminarElementosComprados(emailSolicitante) {
-    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
-    const eliminados = await this.cad.eliminarElementosComprados(usuario.id);
+    const usuario = await this.usuarioConDespensa(emailSolicitante);
+    const eliminados = await this.cad.eliminarElementosComprados(usuario.despensaId);
 
     return { eliminados };
+  }
+
+  // ---------------------------------------------------------------
+  // Hogar: despensa compartida (Sprint 4)
+  // Todos los miembros comparten alimentos y lista de la compra y
+  // tienen los mismos permisos. Las preferencias de avisos son de cada uno.
+  // ---------------------------------------------------------------
+
+  async miembrosDespensa(despensaId) {
+    return (await this.cad.listar())
+      .filter(usuario =>
+        usuario.estado === "activo" &&
+        this.despensaIdDe(usuario) === despensaId
+      );
+  }
+
+  async obtenerHogar(emailSolicitante, ahora = new Date()) {
+    const yo = await this.obtenerUsuarioActivo(emailSolicitante);
+    const miembros = await this.miembrosDespensa(this.despensaIdDe(yo));
+    const invitacion = yo.invitacionHogar;
+
+    return {
+      compartido: miembros.length > 1,
+      maxMiembros: MAX_MIEMBROS_HOGAR,
+      miembros: miembros
+        .map(miembro => ({ email: miembro.email, soyYo: miembro.id === yo.id }))
+        .sort((a, b) => Number(b.soyYo) - Number(a.soyYo) || a.email.localeCompare(b.email)),
+      invitacion: invitacion && invitacion.caducaEn > ahora.getTime()
+        ? { caducaEn: new Date(invitacion.caducaEn) }
+        : null
+    };
+  }
+
+  // Crea un código de invitación de un solo uso. Solo se guarda su huella.
+  async crearInvitacionHogar(emailSolicitante, ahora = new Date()) {
+    const yo = await this.obtenerUsuarioActivo(emailSolicitante);
+    const miembros = await this.miembrosDespensa(this.despensaIdDe(yo));
+
+    if (miembros.length >= MAX_MIEMBROS_HOGAR) {
+      throw new ErrorNegocio(
+        `Un hogar puede tener como máximo ${MAX_MIEMBROS_HOGAR} miembros`,
+        409
+      );
+    }
+
+    const codigo = Array.from(
+      { length: 8 },
+      () => ALFABETO_INVITACION[randomInt(ALFABETO_INVITACION.length)]
+    ).join("");
+
+    const caducaEn = ahora.getTime() + DURACION_INVITACION;
+
+    yo.invitacionHogar = { codigoHash: hashInvitacion(codigo), caducaEn };
+    await this.cad.guardar(yo);
+
+    return {
+      codigo: `${codigo.slice(0, 4)}-${codigo.slice(4)}`,
+      caducaEn: new Date(caducaEn)
+    };
+  }
+
+  async unirseHogar(emailSolicitante, codigo, ahora = new Date()) {
+    const yo = await this.obtenerUsuarioActivo(emailSolicitante);
+    const normalizado = normalizarCodigoInvitacion(codigo);
+    const invalido = new ErrorNegocio(
+      "El código no es válido o ha caducado",
+      400
+    );
+
+    if (!/^[A-Z2-9]{8}$/.test(normalizado)) throw invalido;
+
+    const hash = hashInvitacion(normalizado);
+    const anfitrion = (await this.cad.listar()).find(usuario =>
+      usuario.estado === "activo" &&
+      usuario.invitacionHogar?.codigoHash === hash &&
+      usuario.invitacionHogar.caducaEn > ahora.getTime()
+    );
+
+    if (!anfitrion) throw invalido;
+
+    const destino = this.despensaIdDe(anfitrion);
+    const origen = this.despensaIdDe(yo);
+
+    if (destino === origen) {
+      throw new ErrorNegocio("Ya compartís la misma despensa", 409);
+    }
+
+    const miembrosDestino = await this.miembrosDespensa(destino);
+
+    if (miembrosDestino.length >= MAX_MIEMBROS_HOGAR) {
+      throw new ErrorNegocio("Ese hogar ya está completo", 409);
+    }
+
+    // El código solo sirve una vez.
+    delete anfitrion.invitacionHogar;
+    await this.cad.guardar(anfitrion);
+
+    // Si nadie más usaba mi despensa, sus datos pasan al hogar.
+    // Si la compartía con otros, se queda con ellos.
+    const miembrosOrigen = await this.miembrosDespensa(origen);
+    let alimentosMovidos = 0;
+
+    if (miembrosOrigen.length <= 1) {
+      alimentosMovidos = await this.cad.moverDespensa(origen, destino);
+    }
+
+    yo.hogarId = destino;
+    delete yo.invitacionHogar;
+    await this.cad.guardar(yo);
+
+    return { ...(await this.obtenerHogar(emailSolicitante, ahora)), alimentosMovidos };
+  }
+
+  // Deja a un usuario con una despensa nueva y vacía.
+  async separarDeHogar(usuario) {
+    usuario.hogarId = randomUUID();
+    delete usuario.invitacionHogar;
+    await this.cad.guardar(usuario);
+  }
+
+  async salirHogar(emailSolicitante, ahora = new Date()) {
+    const yo = await this.obtenerUsuarioActivo(emailSolicitante);
+    const miembros = await this.miembrosDespensa(this.despensaIdDe(yo));
+
+    if (miembros.length <= 1) {
+      throw new ErrorNegocio("No compartes tu despensa con nadie", 409);
+    }
+
+    await this.separarDeHogar(yo);
+
+    return this.obtenerHogar(emailSolicitante, ahora);
+  }
+
+  async quitarMiembroHogar(emailSolicitante, emailMiembro, ahora = new Date()) {
+    const yo = await this.obtenerUsuarioActivo(emailSolicitante);
+    const normalizado = this.normalizarEmail(emailMiembro);
+
+    if (normalizado === yo.email) {
+      throw new ErrorNegocio("Para irte del hogar, usa «Salir del hogar»", 400);
+    }
+
+    const miembro = await this.cad.buscarPorEmail(normalizado);
+
+    if (
+      !miembro ||
+      miembro.estado !== "activo" ||
+      this.despensaIdDe(miembro) !== this.despensaIdDe(yo)
+    ) {
+      throw new ErrorNegocio("Esa persona no está en tu hogar", 404);
+    }
+
+    await this.separarDeHogar(miembro);
+
+    return this.obtenerHogar(emailSolicitante, ahora);
   }
 }
 function calcularBloqueo(fallos, ahora) {

@@ -109,6 +109,26 @@ class ClienteRest {
     );
   }
 
+  obtenerHogar() {
+    return this.solicitar("/hogar");
+  }
+
+  crearInvitacionHogar() {
+    return this.solicitar("/hogar/invitacion", "POST");
+  }
+
+  unirseHogar(codigo) {
+    return this.solicitar("/hogar/unirse", "POST", { codigo });
+  }
+
+  salirHogar() {
+    return this.solicitar("/hogar/salir", "POST");
+  }
+
+  quitarMiembroHogar(email) {
+    return this.solicitar(`/hogar/miembros/${encodeURIComponent(email)}`, "DELETE");
+  }
+
   obtenerRecetas() {
     return this.solicitar("/recetas");
   }
