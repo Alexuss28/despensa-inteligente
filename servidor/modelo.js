@@ -30,6 +30,7 @@ class ErrorNegocio extends Error {
   }
 }
 
+const { codigoValido } = require("./productos");
 const DIAS_AVISO_POR_DEFECTO = 3;
 
 class Sistema {
@@ -379,6 +380,7 @@ class Sistema {
       ubicacion: alimento.ubicacion ?? UBICACION_POR_DEFECTO,
       fechaCaducidad: alimento.fechaCaducidad,
       stockMinimo: alimento.stockMinimo ?? null,
+      codigoBarras: alimento.codigoBarras ?? null,
       bajoMinimo: bajoMinimo(alimento),
       estadoCaducidad: estado,
       diasRestantes,
@@ -524,6 +526,61 @@ class Sistema {
       alimento: this.alimentoPublico(actualizado, ahora),
       consumido: delta < 0 ? redondear(existente.cantidad - cantidad) : 0
     };
+  }
+
+  // Busca un producto por código de barras en el catálogo externo e
+  // indica si ya hay un alimento con ese código en la despensa.
+  async buscarProducto(emailSolicitante, codigo, catalogo) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+
+    if (!codigoValido(codigo)) {
+      throw new ErrorNegocio("El código de barras no es válido", 400);
+    }
+
+    const existente = (await this.cad.listarAlimentos(usuario.id))
+      .find(alimento => alimento.codigoBarras === codigo);
+
+    const enDespensa = existente
+      ? {
+          id: existente.id,
+          nombre: existente.nombre,
+          cantidad: existente.cantidad,
+          unidad: existente.unidad,
+          paso: PASOS_UNIDAD[existente.unidad] ?? 1
+        }
+      : null;
+
+    if (!catalogo) {
+      throw new ErrorNegocio("La búsqueda de productos no está disponible", 503);
+    }
+
+    let producto;
+
+    try {
+      producto = await catalogo.buscar(codigo);
+    } catch (error) {
+      // Si el catálogo falla pero el producto ya está en la despensa,
+      // se puede seguir trabajando con él.
+      if (enDespensa) {
+        return { producto: null, enDespensa };
+      }
+
+      throw new ErrorNegocio(
+        error.codigoError === "limite"
+          ? "Hay muchas búsquedas de productos ahora mismo. Inténtalo en un minuto."
+          : "No se ha podido consultar el producto. Inténtalo más tarde.",
+        503
+      );
+    }
+
+    if (!producto && !enDespensa) {
+      throw new ErrorNegocio(
+        "No hemos encontrado ese producto. Puedes añadirlo a mano.",
+        404
+      );
+    }
+
+    return { producto, enDespensa };
   }
 
   async eliminarAlimento(emailSolicitante, idAlimento) {

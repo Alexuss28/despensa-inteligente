@@ -34,6 +34,13 @@ const despensa = new Despensa(rest, {
 });
 const avisos = new Avisos(rest, { mostrarMensaje, sesionCaducada });
 
+const escaner = new Escaner(rest, {
+  mostrarMensaje,
+  sesionCaducada,
+  alUsarProducto: producto => despensa.rellenarDesdeProducto(producto),
+  alCambiar: () => despensa.cargar()
+});
+
 const oneTap = new GoogleOneTap(rest, {
   mostrarMensaje,
   alIniciarSesion(datos) {

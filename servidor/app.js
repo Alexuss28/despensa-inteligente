@@ -16,7 +16,8 @@ function crearApp(
     store,
     correo,
     google,
-    tokenTareas
+    tokenTareas,
+    catalogoProductos
   } = {}
 ) {
   const app = express();
@@ -50,9 +51,10 @@ function crearApp(
   app.use("/api", crearTareas(sistema, { correo, tokenTareas }));
 
   app.use("/api", crearApi(sistema, {
-  produccion,
-  correo
-}));
+    produccion,
+    correo,
+    catalogoProductos
+  }));
 
   app.use("/api", (req, res) => {
     res.status(404).json({ error: "Ruta no encontrada" });

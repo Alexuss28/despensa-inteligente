@@ -1,3 +1,5 @@
+const { codigoValido } = require("./productos");
+
 const UNIDADES = ["unidades", "g", "kg", "ml", "l"];
 
 const CATEGORIAS = [
@@ -166,6 +168,16 @@ function validarDatosAlimento(datos) {
     stockMinimo = Math.round(stockMinimo * 1000) / 1000;
   }
 
+  let codigoBarras = datos.codigoBarras ?? null;
+
+  if (codigoBarras === "") {
+    codigoBarras = null;
+  }
+
+  if (codigoBarras !== null && !codigoValido(codigoBarras)) {
+    return { error: "El código de barras no es válido" };
+  }
+
   return {
     datos: {
       nombre,
@@ -174,7 +186,8 @@ function validarDatosAlimento(datos) {
       categoria,
       ubicacion,
       fechaCaducidad,
-      stockMinimo
+      stockMinimo,
+      codigoBarras
     }
   };
 }

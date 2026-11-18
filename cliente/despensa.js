@@ -39,8 +39,15 @@ class Despensa {
       categoria: document.querySelector("#alimento-categoria"),
       ubicacion: document.querySelector("#alimento-ubicacion"),
       fechaCaducidad: document.querySelector("#alimento-caducidad"),
-      stockMinimo: document.querySelector("#alimento-minimo")
+      stockMinimo: document.querySelector("#alimento-minimo"),
+      codigoBarras: document.querySelector("#alimento-codigo")
     };
+
+    this.codigoAsociado = document.querySelector("#codigo-asociado");
+    this.textoCodigo = document.querySelector("#texto-codigo-asociado");
+
+    document.querySelector("#btn-quitar-codigo")
+      .addEventListener("click", () => this.ponerCodigo(null));
 
     this.filtroTexto = document.querySelector("#filtro-texto");
     this.filtroEstado = document.querySelector("#filtro-estado");
@@ -472,7 +479,8 @@ class Despensa {
         categoria: this.campos.categoria.value,
         ubicacion: this.campos.ubicacion.value,
         fechaCaducidad: this.campos.fechaCaducidad.value || null,
-        stockMinimo
+        stockMinimo,
+        codigoBarras: this.campos.codigoBarras.value || null
       }
     };
   }
@@ -517,6 +525,7 @@ class Despensa {
     this.campos.fechaCaducidad.value = alimento.fechaCaducidad || "";
     this.campos.stockMinimo.value =
       alimento.stockMinimo === null ? "" : alimento.stockMinimo;
+    this.ponerCodigo(alimento.codigoBarras);
 
     this.tituloFormulario.textContent = `Editar «${alimento.nombre}»`;
     this.botonGuardar.textContent = "Guardar cambios";
@@ -525,9 +534,40 @@ class Despensa {
     this.campos.nombre.focus();
   }
 
+  // Muestra (o quita) el código de barras asociado al alimento del formulario.
+  ponerCodigo(codigo) {
+    this.campos.codigoBarras.value = codigo || "";
+    this.codigoAsociado.hidden = !codigo;
+    this.textoCodigo.textContent = codigo ? `Código de barras ${codigo}` : "";
+  }
+
+  // Rellena el formulario con un producto encontrado por el escáner.
+  rellenarDesdeProducto(producto) {
+    this.reiniciarFormulario();
+
+    if (producto.nombre) {
+      this.campos.nombre.value = producto.nombre;
+      this.campos.cantidad.value = producto.cantidad;
+      this.campos.unidad.value = producto.unidad;
+      this.campos.categoria.value = producto.categoria;
+      this.campos.ubicacion.value = producto.ubicacion;
+    }
+
+    this.ponerCodigo(producto.codigo);
+
+    // Lo único que el envase no dice es cuándo caduca el tuyo.
+    const siguiente = producto.nombre
+      ? this.campos.fechaCaducidad
+      : this.campos.nombre;
+
+    this.formulario.scrollIntoView({ behavior: "smooth", block: "start" });
+    siguiente.focus({ preventScroll: true });
+  }
+
   reiniciarFormulario() {
     this.editandoId = null;
     this.formulario.reset();
+    this.ponerCodigo(null);
     this.tituloFormulario.textContent = "Añadir alimento";
     this.botonGuardar.textContent = "Añadir";
     this.botonCancelar.hidden = true;
