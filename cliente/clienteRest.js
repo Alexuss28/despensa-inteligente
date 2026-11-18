@@ -152,11 +152,15 @@ class ClienteRest {
     );
   }
 
-  eliminarAlimento(id) {
+  eliminarAlimento(id, motivo = "error") {
     return this.solicitar(
-      `/alimentos/${encodeURIComponent(id)}`,
+      `/alimentos/${encodeURIComponent(id)}?motivo=${encodeURIComponent(motivo)}`,
       "DELETE"
     );
+  }
+
+  obtenerEstadisticas(meses = 6) {
+    return this.solicitar(`/estadisticas?meses=${meses}`);
   }
 
   // Google One Tap

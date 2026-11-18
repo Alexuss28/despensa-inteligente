@@ -1118,6 +1118,318 @@ button.enlace.enlace-peligro:hover {
   margin-top: 0;
 }
 
+/* ---------- Diálogo de eliminar ---------- */
+
+.form-eliminar h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+}
+
+.form-eliminar .ayuda {
+  margin: 0 0 16px;
+}
+
+.opciones-eliminar {
+  display: grid;
+  gap: 10px;
+}
+
+.form-eliminar button.enlace {
+  justify-self: center;
+  margin-top: 6px;
+  color: var(--tinta-suave);
+}
+
+.form-eliminar button.enlace:hover {
+  color: var(--tinta);
+}
+
+/* ---------- Estadísticas ---------- */
+
+.seccion-estadisticas {
+  margin-top: 56px;
+  --serie-terminados: #2f6fae;
+  --serie-tirados: #c2410c;
+}
+
+.cabecera-estadisticas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.cabecera-estadisticas .titulo-seccion {
+  margin-bottom: 4px;
+}
+
+.descargas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.boton-enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--tinta);
+  border-radius: 999px;
+  color: var(--tinta);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.boton-enlace:hover {
+  background: var(--tinta);
+  color: #ffffff;
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.cifra {
+  background: var(--superficie);
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cifra-valor {
+  font-family: var(--titulos);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.cifra-etiqueta {
+  font-weight: 600;
+}
+
+.cifra-detalle {
+  font-size: 0.85rem;
+  color: var(--gris);
+}
+
+#estado-estadisticas:empty {
+  display: none;
+}
+
+.contenido-estadisticas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.tarjeta-grafico {
+  flex: 999 1 520px;
+  min-width: 0;
+  padding: 22px;
+}
+
+.tarjeta-ranking {
+  flex: 1 1 260px;
+  padding: 22px;
+}
+
+.cabecera-grafico {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+
+.cabecera-grafico h3,
+.tarjeta-ranking h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.leyenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: var(--tinta-suave);
+}
+
+.leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.muestra {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.muestra-terminados {
+  background: var(--serie-terminados);
+}
+
+.muestra-tirados {
+  background: var(--serie-tirados);
+}
+
+.grafico {
+  position: relative;
+  padding-top: 18px;
+}
+
+/* Línea de referencia superior (máximo) y línea base. */
+.eje-maximo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 0.75rem;
+  color: var(--gris);
+}
+
+.grafico-meses {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  border-top: 1px dashed var(--linea);
+}
+
+.columna-mes {
+  display: grid;
+  gap: 6px;
+  padding: 0 2px;
+  border-radius: 8px;
+  cursor: default;
+}
+
+.columna-mes:focus-visible {
+  outline: var(--foco);
+  outline-offset: 2px;
+}
+
+.columna-activa {
+  background: var(--neutro-fondo);
+}
+
+.barras-mes {
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  border-bottom: 1.5px solid #b9b0a5;
+}
+
+.barra {
+  width: min(16px, 40%);
+  border-radius: 4px 4px 0 0;
+}
+
+.barra-terminados {
+  background: var(--serie-terminados);
+}
+
+.barra-tirados {
+  background: var(--serie-tirados);
+}
+
+.barra-cero {
+  height: 0 !important;
+}
+
+.etiqueta-mes {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--gris);
+}
+
+.tooltip-grafico {
+  position: absolute;
+  top: 24px;
+  z-index: 2;
+  min-width: 140px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--superficie);
+  border: 1.5px solid var(--tinta);
+  box-shadow: 0 6px 20px rgba(27, 42, 65, 0.15);
+  pointer-events: none;
+  font-size: 0.9rem;
+}
+
+.titulo-tooltip {
+  color: var(--tinta-suave);
+  margin-bottom: 4px;
+}
+
+.fila-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fila-tooltip strong {
+  font-size: 1rem;
+}
+
+.clave-tooltip {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.clave-terminados {
+  background: var(--serie-terminados);
+}
+
+.clave-tirados {
+  background: var(--serie-tirados);
+}
+
+.ver-tabla {
+  margin-top: 14px;
+}
+
+.ver-tabla summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+
+.mas-tirados {
+  margin: 14px 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.mas-tirados li span:first-child {
+  font-weight: 600;
+}
+
+.mas-tirados .veces {
+  margin-left: 8px;
+  color: var(--gris);
+  font-size: 0.9rem;
+}
+
 /* ---------- Tablas ---------- */
 
 .tabla-contenedor {

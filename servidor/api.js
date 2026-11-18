@@ -426,6 +426,41 @@ function crearApi(
     }
   });
 
+  router.get("/estadisticas", async (req, res, next) => {
+    try {
+      res.json(
+        await sistema.obtenerEstadisticas(req.session.email, req.query.meses ?? 6)
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  function enviarCsv(res, nombre, contenido) {
+    const fecha = new Date().toISOString().slice(0, 10);
+    res
+      .type("text/csv; charset=utf-8")
+      .set("Content-Disposition", `attachment; filename="${nombre}-${fecha}.csv"`)
+      .set("Cache-Control", "no-store")
+      .send(contenido);
+  }
+
+  router.get("/exportar/despensa.csv", async (req, res, next) => {
+    try {
+      enviarCsv(res, "despensa", await sistema.exportarDespensaCsv(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/exportar/historial.csv", async (req, res, next) => {
+    try {
+      enviarCsv(res, "historial", await sistema.exportarHistorialCsv(req.session.email));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.get("/alimentos", async (req, res, next) => {
     try {
       res.json(await sistema.listarAlimentos(req.session.email));
@@ -478,7 +513,11 @@ function crearApi(
   router.delete("/alimentos/:id", async (req, res, next) => {
     try {
       res.json(
-        await sistema.eliminarAlimento(req.session.email, req.params.id)
+        await sistema.eliminarAlimento(
+          req.session.email,
+          req.params.id,
+          req.query.motivo
+        )
       );
     } catch (error) {
       next(error);

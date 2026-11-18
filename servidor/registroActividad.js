@@ -34,6 +34,12 @@ function identificarOperacion(req) {
 
   if (ruta === "/recetas") return "recetas";
 
+  if (ruta === "/estadisticas") return "estadisticas";
+
+  if (/^\/exportar\/(despensa|historial)\.csv$/.test(ruta)) {
+    return `exportar_${ruta.split("/")[2].replace(".csv", "")}`;
+  }
+
   if (ruta === "/hogar") return "hogar";
 
   if (/^\/hogar\/(invitacion|unirse|salir)\/?$/.test(ruta)) {
