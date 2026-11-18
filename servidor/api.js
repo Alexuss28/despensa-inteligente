@@ -4,9 +4,34 @@ const { calcularBloqueo } = require("./modelo");
 
 function crearApi(
   sistema,
-  { produccion = false, correo } = {}
+  { produccion = false, correo, catalogoProductos } = {}
 ) {
   const router = express.Router();
+
+  // Límite de búsquedas de productos por usuario (por minuto), para
+  // repartir entre todos el límite de Open Food Facts.
+  const busquedasPorUsuario = new Map();
+  const MAX_BUSQUEDAS_MINUTO = 10;
+
+  function puedeBuscar(email) {
+    const ahora = Date.now();
+    const recientes = (busquedasPorUsuario.get(email) || [])
+      .filter(instante => ahora - instante < 60000);
+
+    if (recientes.length >= MAX_BUSQUEDAS_MINUTO) {
+      busquedasPorUsuario.set(email, recientes);
+      return false;
+    }
+
+    recientes.push(ahora);
+    busquedasPorUsuario.set(email, recientes);
+
+    if (busquedasPorUsuario.size > 1000) {
+      busquedasPorUsuario.delete(busquedasPorUsuario.keys().next().value);
+    }
+
+    return true;
+  }
     router.post("/prueba/bloqueo", (req, res, next) => {
     try {
       const resultado = calcularBloqueo(
@@ -284,6 +309,26 @@ function crearApi(
         await sistema.actualizarPreferenciasAvisos(
           req.session.email,
           req.body
+        )
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/productos/:codigo", async (req, res, next) => {
+    try {
+      if (!puedeBuscar(req.session.email)) {
+        return res.status(429).json({
+          error: "Has hecho muchas búsquedas seguidas. Espera un minuto."
+        });
+      }
+
+      res.json(
+        await sistema.buscarProducto(
+          req.session.email,
+          req.params.codigo,
+          catalogoProductos
         )
       );
     } catch (error) {

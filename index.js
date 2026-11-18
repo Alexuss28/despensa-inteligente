@@ -9,6 +9,7 @@ const {
 } = require("./servidor/cuentaPrueba");
 const { crearCorreo } = require("./servidor/correo");
 const { crearGoogle } = require("./servidor/google");
+const { crearCatalogoProductos } = require("./servidor/productos");
 async function arrancar() {
   let cad;
 
@@ -56,7 +57,10 @@ async function arrancar() {
       store,
       correo,
       google,
-      tokenTareas: process.env.TAREAS_TOKEN
+      tokenTareas: process.env.TAREAS_TOKEN,
+      catalogoProductos: crearCatalogoProductos({
+        userAgent: process.env.OFF_USER_AGENT || undefined
+      })
     });
 
     const puerto = process.env.PORT || 3000;

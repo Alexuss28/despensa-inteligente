@@ -99,7 +99,8 @@ test("Validación: limpia los datos y aplica valores por defecto", () => {
     categoria: "otros",
     ubicacion: "despensa",
     fechaCaducidad: null,
-    stockMinimo: null
+    stockMinimo: null,
+    codigoBarras: null
   });
 });
 

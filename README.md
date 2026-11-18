@@ -149,6 +149,7 @@ En otros terminales puede utilizarse `npm` en lugar de `npm.cmd`.
 | `GOOGLE_CLIENT_ID` | Identificador del cliente OAuth de Google. |
 | `GOOGLE_CLIENT_SECRET` | Secreto del cliente OAuth de Google. |
 | `TAREAS_TOKEN` | Opcional. Token secreto (32 caracteres o más) de las tareas programadas, como los avisos de caducidad. |
+| `OFF_USER_AGENT` | Opcional. User-Agent para Open Food Facts, idealmente con un correo de contacto: `DespensaInteligente/1.0 (correo@ejemplo.com)`. |
 | `MONGODB_URI_TEST` | Opcional. Cadena de conexión para las pruebas de integración. |
 | `MONGODB_DB_TEST` | Opcional. Base de las pruebas de integración (por defecto `despensa_inteligente_test`). |
 
@@ -355,6 +356,24 @@ Sin `TAREAS_TOKEN` (o con menos de 32 caracteres), la ruta devuelve 503.
 - Con el teclado, el foco se queda en el mismo botón para poder
   pulsarlo varias veces seguidas.
 
+### Sprint 4: escáner de código de barras
+
+- El botón **Escanear** del formulario abre la cámara y lee códigos
+  EAN-13, EAN-8 y UPC con `BarcodeDetector` (Chrome y Edge, sobre todo
+  en Android). En otros navegadores, o sin permiso de cámara, se
+  escribe el código a mano.
+- El servidor consulta el producto en [Open Food Facts](https://world.openfoodfacts.org)
+  y rellena nombre, cantidad del envase, unidad, categoría y ubicación.
+  Solo queda indicar la fecha de caducidad.
+- Si el producto ya está en la despensa (mismo código), ofrece
+  **sumar** un envase al que ya tienes en lugar de duplicarlo.
+- Si Open Food Facts no lo conoce, se puede añadir a mano conservando
+  el código para la próxima vez.
+- Se comprueba el dígito de control del código antes de consultar.
+- Las respuestas se guardan 24 horas en caché (1 hora las no
+  encontradas) y cada usuario puede hacer 10 búsquedas por minuto,
+  porque Open Food Facts limita las consultas por IP.
+
 ## Persistencia
 
 Los usuarios, los alimentos, la lista de la compra y las sesiones se
@@ -402,6 +421,7 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | POST | `/api/alimentos` | Usuario autenticado |
 | PUT | `/api/alimentos/:id` | Propietario del alimento |
 | PATCH | `/api/alimentos/:id/cantidad` | Propietario del alimento |
+| GET | `/api/productos/:codigo` | Usuario autenticado (10 por minuto) |
 | DELETE | `/api/alimentos/:id` | Propietario del alimento |
 | POST | `/api/prueba/bloqueo` | Público; ejercicio técnico de cálculo de bloqueo |
 
@@ -523,7 +543,29 @@ Un alimento inexistente o de otro usuario devuelve 404.
 `PATCH /api/alimentos/:id/cantidad` recibe `{ "delta": -1 }` (negativo
 resta, positivo suma) y devuelve el alimento y la cantidad que se ha
 restado de verdad (`consumido`). Si ya no queda nada, devuelve 409.
-Cada alimento incluye `paso`, la cantidad que mueven los botones.
+Cada alimento incluye `paso`, la cantidad que mueven los botones,
+y admite un `codigoBarras` opcional (8, 12, 13 o 14 cifras válidas).
+
+`GET /api/productos/:codigo` devuelve:
+
+```json
+{
+  "producto": {
+    "codigo": "8410188012153",
+    "nombre": "Leche semidesnatada",
+    "marca": "Marca Blanca",
+    "categoria": "lácteos y huevos",
+    "ubicacion": "nevera",
+    "cantidad": 1,
+    "unidad": "l"
+  },
+  "enDespensa": null
+}
+```
+
+`enDespensa` contiene el alimento con ese código si ya existe.
+Responde 400 si el código no es válido, 404 si no se conoce, 429 al
+superar el límite por usuario y 503 si Open Food Facts no responde.
 
 Los alimentos admiten además `"stockMinimo"` (número o `null`) y la
 respuesta incluye `"bajoMinimo"`.

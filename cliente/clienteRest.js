@@ -109,6 +109,10 @@ class ClienteRest {
     );
   }
 
+  buscarProducto(codigo) {
+    return this.solicitar(`/productos/${encodeURIComponent(codigo)}`);
+  }
+
   ajustarCantidad(id, delta) {
     return this.solicitar(
       `/alimentos/${encodeURIComponent(id)}/cantidad`,

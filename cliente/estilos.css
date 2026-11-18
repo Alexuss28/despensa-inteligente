@@ -569,6 +569,130 @@ summary:focus-visible {
   color: var(--tinta);
 }
 
+.cabecera-form-alimento {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-oscuro button.boton-escanear {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.codigo-asociado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #c9d0dc;
+}
+
+button.enlace {
+  min-height: 32px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--acento-claro);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+button.enlace:hover {
+  background: none;
+  color: #ffffff;
+}
+
+/* ---------- Diálogos ---------- */
+
+.dialogo {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  border: 1.5px solid var(--tinta);
+  border-radius: var(--radio-grande);
+  padding: 24px;
+  color: var(--tinta);
+  background: var(--superficie);
+  box-shadow: var(--sombra-marcada);
+}
+
+.dialogo::backdrop {
+  background: rgba(27, 42, 65, 0.55);
+}
+
+.dialogo-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dialogo-cabecera h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.zona-camara {
+  position: relative;
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: #000000;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 12px;
+}
+
+.zona-camara video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.marco-escaner {
+  position: absolute;
+  inset: 30% 10%;
+  border: 3px solid var(--acento-claro);
+  border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35);
+}
+
+.estado-escaner {
+  margin: 0 0 12px;
+  color: var(--tinta-suave);
+}
+
+.estado-escaner:empty {
+  display: none;
+}
+
+.form-codigo .fila-codigo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.resultado-escaner {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--linea);
+}
+
+.resultado-nombre {
+  margin: 0;
+  font-family: var(--titulos);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.resultado-escaner .ayuda {
+  margin: 4px 0 14px;
+}
+
 .campos-alimento {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

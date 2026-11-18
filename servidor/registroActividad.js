@@ -32,6 +32,8 @@ function identificarOperacion(req) {
 
   if (ruta === "/alimentos") return "alimentos";
 
+  if (/^\/productos\/[^/]+\/?$/.test(ruta)) return "buscar_producto";
+
   if (ruta === "/preferencias/avisos") return "preferencias_avisos";
 
   if (ruta === "/lista-compra") return "lista_compra";
