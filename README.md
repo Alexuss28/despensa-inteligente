@@ -343,6 +343,18 @@ Sin `TAREAS_TOKEN` (o con menos de 32 caracteres), la ruta devuelve 503.
 - La ubicación y la categoría se muestran bajo el nombre del alimento.
 - El resumen de `GET /api/alimentos` incluye `porUbicacion`.
 
+### Sprint 4: restar y sumar sin editar
+
+- Cada alimento tiene botones **−** y **+** junto a su cantidad para
+  gastarlo o reponerlo sin abrir el formulario.
+- El paso depende de la unidad: 1 unidad, 100 g, 100 ml, 0,25 kg o 0,25 l.
+- La cantidad nunca baja de 0. Al llegar a 0 se marca «Agotado»
+  y el botón **−** se desactiva.
+- Si el alimento tiene mínimo, entra o sale de la lista de la compra
+  al momento.
+- Con el teclado, el foco se queda en el mismo botón para poder
+  pulsarlo varias veces seguidas.
+
 ## Persistencia
 
 Los usuarios, los alimentos, la lista de la compra y las sesiones se
@@ -389,6 +401,7 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | GET | `/api/alimentos` | Usuario autenticado; solo sus alimentos |
 | POST | `/api/alimentos` | Usuario autenticado |
 | PUT | `/api/alimentos/:id` | Propietario del alimento |
+| PATCH | `/api/alimentos/:id/cantidad` | Propietario del alimento |
 | DELETE | `/api/alimentos/:id` | Propietario del alimento |
 | POST | `/api/prueba/bloqueo` | Público; ejercicio técnico de cálculo de bloqueo |
 
@@ -506,6 +519,11 @@ Categorías: `fruta y verdura`, `carne y pescado`, `lácteos y huevos`,
 ```
 
 Un alimento inexistente o de otro usuario devuelve 404.
+
+`PATCH /api/alimentos/:id/cantidad` recibe `{ "delta": -1 }` (negativo
+resta, positivo suma) y devuelve el alimento y la cantidad que se ha
+restado de verdad (`consumido`). Si ya no queda nada, devuelve 409.
+Cada alimento incluye `paso`, la cantidad que mueven los botones.
 
 Los alimentos admiten además `"stockMinimo"` (número o `null`) y la
 respuesta incluye `"bajoMinimo"`.

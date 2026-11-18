@@ -11,6 +11,10 @@ const {
   validarDatosAlimento,
   compararAlimentos,
   bajoMinimo,
+  CANTIDAD_MAXIMA,
+  PASOS_UNIDAD,
+  redondear,
+  validarAjuste,
   UBICACIONES,
   UBICACION_POR_DEFECTO
 } = require("./alimentos");
@@ -370,6 +374,7 @@ class Sistema {
       nombre: alimento.nombre,
       cantidad: alimento.cantidad,
       unidad: alimento.unidad,
+      paso: PASOS_UNIDAD[alimento.unidad] ?? 1,
       categoria: alimento.categoria,
       ubicacion: alimento.ubicacion ?? UBICACION_POR_DEFECTO,
       fechaCaducidad: alimento.fechaCaducidad,
@@ -483,6 +488,42 @@ class Sistema {
     await this.cad.guardarAlimento(actualizado);
 
     return this.alimentoPublico(actualizado, ahora);
+  }
+
+  // Suma o resta cantidad sin pasar por el formulario de edición.
+  // Nunca baja de 0 y devuelve también cuánto se ha restado de verdad.
+  async ajustarCantidad(emailSolicitante, idAlimento, datos, ahora = new Date()) {
+    const usuario = await this.obtenerUsuarioSesion(emailSolicitante);
+    const id = this.validarIdAlimento(idAlimento);
+    const delta = datos?.delta;
+
+    const existente = await this.cad.buscarAlimento(usuario.id, id);
+
+    if (!existente) {
+      throw new ErrorNegocio("El alimento no existe", 404);
+    }
+
+    const error = validarAjuste(delta, existente.unidad);
+
+    if (error) {
+      throw new ErrorNegocio(error, 400);
+    }
+
+    if (delta < 0 && existente.cantidad <= 0) {
+      throw new ErrorNegocio(`No queda ${existente.nombre}`, 409);
+    }
+
+    const cantidad = redondear(
+      Math.min(CANTIDAD_MAXIMA, Math.max(0, existente.cantidad + delta))
+    );
+
+    const actualizado = { ...existente, cantidad, actualizadoEn: ahora };
+    await this.cad.guardarAlimento(actualizado);
+
+    return {
+      alimento: this.alimentoPublico(actualizado, ahora),
+      consumido: delta < 0 ? redondear(existente.cantidad - cantidad) : 0
+    };
   }
 
   async eliminarAlimento(emailSolicitante, idAlimento) {

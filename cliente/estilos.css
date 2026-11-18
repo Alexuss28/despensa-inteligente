@@ -836,6 +836,42 @@ button.pestana[aria-pressed="true"] .pestana-numero {
   white-space: nowrap;
 }
 
+.control-cantidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.valor-cantidad {
+  min-width: 64px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+button.boton-cantidad {
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1.5px solid var(--linea);
+  background: #ffffff;
+  color: var(--tinta);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+button.boton-cantidad:hover:not(:disabled) {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: #ffffff;
+}
+
+button.boton-cantidad:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
 .punto {
   display: inline-block;
   width: 10px;
@@ -1016,6 +1052,10 @@ button.pestana[aria-pressed="true"] .pestana-numero {
     padding: 4px 0;
   }
 
+  #tabla-alimentos td:nth-child(2) {
+    white-space: normal;
+  }
+
   #tabla-alimentos td[data-etiqueta]::before {
     content: attr(data-etiqueta) ": ";
     color: var(--gris);
@@ -1029,6 +1069,14 @@ button.pestana[aria-pressed="true"] .pestana-numero {
     justify-content: flex-start;
     padding-top: 6px;
   }
+}
+
+.pastilla.pastilla-agotado,
+td .pastilla.pastilla-agotado {
+  background: var(--rojo-fondo);
+  color: var(--rojo-texto);
+  font-size: 0.75rem;
+  padding: 3px 9px;
 }
 
 /* Va al final para imponerse a los colores de estado de la fila. */

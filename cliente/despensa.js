@@ -209,6 +209,13 @@ class Despensa {
 
     this.filas.replaceChildren(fragmento);
     this.pintarContadores();
+
+    if (this.enfocarTrasPintar) {
+      const boton = [...this.filas.querySelectorAll("[data-ajuste]")]
+        .find(b => b.dataset.ajuste === this.enfocarTrasPintar);
+      this.enfocarTrasPintar = null;
+      if (boton && !boton.disabled) boton.focus();
+    }
     this.tabla.hidden = visibles.length === 0;
     this.estado.className = "";
 
@@ -269,6 +276,67 @@ class Despensa {
     return celda;
   }
 
+  formatearCantidad(numero) {
+    return numero.toLocaleString("es-ES", { maximumFractionDigits: 3 });
+  }
+
+  // "1 unidad", "3 unidades", "0,5 l"
+  textoCantidad(numero, unidad) {
+    const nombre = unidad === "unidades" && numero === 1 ? "unidad" : unidad;
+    return `${this.formatearCantidad(numero)} ${nombre}`;
+  }
+
+  // Cantidad con botones para restar o sumar sin abrir el formulario.
+  crearCeldaCantidad(alimento) {
+    const celda = document.createElement("td");
+    celda.dataset.etiqueta = "Cantidad";
+
+    const control = document.createElement("div");
+    control.className = "control-cantidad";
+
+    const paso = alimento.paso ?? 1;
+    const textoPaso = this.textoCantidad(paso, alimento.unidad);
+
+    const crearBoton = (signo, delta, etiqueta) => {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "boton-cantidad";
+      boton.textContent = signo;
+      boton.dataset.ajuste = `${alimento.id}:${signo}`;
+      boton.setAttribute("aria-label", `${etiqueta} ${textoPaso} de ${alimento.nombre}`);
+      boton.title = `${etiqueta} ${textoPaso}`;
+      boton.addEventListener("click", () => this.ajustar(alimento, delta, boton));
+      return boton;
+    };
+
+    const restar = crearBoton("−", -paso, "Restar");
+    restar.disabled = alimento.cantidad <= 0;
+
+    const valor = document.createElement("span");
+    valor.className = "valor-cantidad";
+    valor.textContent = this.textoCantidad(alimento.cantidad, alimento.unidad);
+
+    control.append(restar, valor, crearBoton("+", paso, "Sumar"));
+    celda.append(control);
+
+    return celda;
+  }
+
+  async ajustar(alimento, delta, boton) {
+    boton.disabled = true;
+    // Tras repintar la tabla, el foco vuelve al mismo botón.
+    this.enfocarTrasPintar = boton.dataset.ajuste;
+
+    try {
+      await this.rest.ajustarCantidad(alimento.id, delta);
+      await this.cargar();
+    } catch (error) {
+      boton.disabled = false;
+      this.enfocarTrasPintar = null;
+      this.tratarError(error, this.estado);
+    }
+  }
+
   crearFila(alimento) {
     const fila = document.createElement("tr");
     fila.className = `caducidad-${alimento.estadoCaducidad}`;
@@ -310,12 +378,14 @@ class Despensa {
 
     nombre.append(punto, alimento.nombre, detalle);
 
-    const cantidad = this.crearCelda(
-      `${alimento.cantidad} ${alimento.unidad}`,
-      "Cantidad"
-    );
+    const cantidad = this.crearCeldaCantidad(alimento);
 
-    if (alimento.bajoMinimo) {
+    if (alimento.cantidad === 0) {
+      const agotado = document.createElement("span");
+      agotado.className = "pastilla pastilla-agotado";
+      agotado.textContent = "Agotado";
+      cantidad.append(" ", agotado);
+    } else if (alimento.bajoMinimo) {
       const reponer = document.createElement("span");
       reponer.className = "pastilla pastilla-reponer";
       reponer.textContent = "Reponer";

@@ -16,6 +16,17 @@ const CATEGORIAS = [
 const UBICACIONES = ["nevera", "congelador", "despensa"];
 const UBICACION_POR_DEFECTO = "despensa";
 
+// Cantidad que suman o restan los botones rápidos según la unidad.
+const PASOS_UNIDAD = {
+  unidades: 1,
+  g: 100,
+  ml: 100,
+  kg: 0.25,
+  l: 0.25
+};
+
+const CANTIDAD_MAXIMA = 100000;
+
 const DIAS_AVISO_CADUCIDAD = 3;
 const MAX_ALIMENTOS_POR_USUARIO = 500;
 const ZONA_HORARIA = "Europe/Madrid";
@@ -168,6 +179,28 @@ function validarDatosAlimento(datos) {
   };
 }
 
+function redondear(cantidad) {
+  return Math.round(cantidad * 1000) / 1000;
+}
+
+// Valida un ajuste rápido de cantidad (positivo suma, negativo resta).
+function validarAjuste(delta, unidad) {
+  if (
+    typeof delta !== "number" ||
+    !Number.isFinite(delta) ||
+    delta === 0 ||
+    Math.abs(delta) > CANTIDAD_MAXIMA
+  ) {
+    return "El ajuste debe ser un número distinto de 0";
+  }
+
+  if (unidad === "unidades" && !Number.isInteger(delta)) {
+    return "Las unidades solo se pueden ajustar con números enteros";
+  }
+
+  return null;
+}
+
 function bajoMinimo(alimento) {
   return (
     typeof alimento.stockMinimo === "number" &&
@@ -191,6 +224,10 @@ function compararAlimentos(a, b) {
 }
 
 module.exports = {
+  PASOS_UNIDAD,
+  CANTIDAD_MAXIMA,
+  redondear,
+  validarAjuste,
   UBICACIONES,
   UBICACION_POR_DEFECTO,
   UNIDADES,

@@ -326,6 +326,20 @@ function crearApi(
     }
   });
 
+  router.patch("/alimentos/:id/cantidad", async (req, res, next) => {
+    try {
+      res.json(
+        await sistema.ajustarCantidad(
+          req.session.email,
+          req.params.id,
+          req.body
+        )
+      );
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.delete("/alimentos/:id", async (req, res, next) => {
     try {
       res.json(
