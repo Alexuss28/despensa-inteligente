@@ -84,9 +84,14 @@ class ListaCompra {
 
     const detalle = document.createElement("span");
     detalle.className = "elemento-detalle";
+    const unidad = alimento.unidad === "unidades" && alimento.cantidad === 1
+      ? "unidad"
+      : alimento.unidad;
+
     detalle.textContent =
-      ` · quedan ${alimento.cantidad} ${alimento.unidad}` +
-      ` (mínimo ${alimento.stockMinimo})`;
+      ` · ${alimento.cantidad === 1 ? "queda" : "quedan"} ` +
+      `${alimento.cantidad.toLocaleString("es-ES")} ${unidad}` +
+      ` (mínimo ${alimento.stockMinimo.toLocaleString("es-ES")})`;
 
     texto.append(nombre, detalle);
 

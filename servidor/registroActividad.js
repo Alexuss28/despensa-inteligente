@@ -42,6 +42,10 @@ function identificarOperacion(req) {
 
   if (ruta === "/tareas/avisos-caducidad") return "tarea_avisos_caducidad";
 
+  if (/^\/alimentos\/[^/]+\/cantidad\/?$/.test(ruta)) {
+    return "cantidad_alimento";
+  }
+
   if (/^\/alimentos\/[^/]+\/?$/.test(ruta)) {
     return "operacion_alimento";
   }

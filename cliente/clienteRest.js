@@ -109,6 +109,14 @@ class ClienteRest {
     );
   }
 
+  ajustarCantidad(id, delta) {
+    return this.solicitar(
+      `/alimentos/${encodeURIComponent(id)}/cantidad`,
+      "PATCH",
+      { delta }
+    );
+  }
+
   eliminarAlimento(id) {
     return this.solicitar(
       `/alimentos/${encodeURIComponent(id)}`,
