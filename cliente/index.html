@@ -14,6 +14,7 @@
   <script src="/clienteRest.js" defer></script>
   <script src="/despensa.js" defer></script>
   <script src="/escaner.js" defer></script>
+  <script src="/recetas.js" defer></script>
   <script src="/avisos.js" defer></script>
   <script src="/listaCompra.js" defer></script>
   <script src="/googleOneTap.js" defer></script>
@@ -342,6 +343,16 @@
           </section>
         </aside>
       </div>
+
+      <section id="recetas" class="seccion-recetas" aria-labelledby="titulo-recetas">
+        <div class="cabecera-recetas">
+          <h2 id="titulo-recetas" class="titulo-seccion">Ideas para cocinar</h2>
+          <p id="resumen-recetas" class="entradilla-seccion"></p>
+        </div>
+
+        <p id="estado-recetas" role="status" aria-live="polite"></p>
+        <div id="lista-recetas" class="rejilla-recetas"></div>
+      </section>
     </section>
 
     <dialog id="dialogo-escaner" class="dialogo" aria-labelledby="titulo-escaner">

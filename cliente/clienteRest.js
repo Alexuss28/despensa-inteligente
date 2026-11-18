@@ -109,6 +109,17 @@ class ClienteRest {
     );
   }
 
+  obtenerRecetas() {
+    return this.solicitar("/recetas");
+  }
+
+  agregarFaltantesReceta(id) {
+    return this.solicitar(
+      `/recetas/${encodeURIComponent(id)}/lista-compra`,
+      "POST"
+    );
+  }
+
   buscarProducto(codigo) {
     return this.solicitar(`/productos/${encodeURIComponent(codigo)}`);
   }

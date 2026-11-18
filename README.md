@@ -374,6 +374,25 @@ Sin `TAREAS_TOKEN` (o con menos de 32 caracteres), la ruta devuelve 503.
   encontradas) y cada usuario puede hacer 10 búsquedas por minuto,
   porque Open Food Facts limita las consultas por IP.
 
+### Sprint 4: recetas con lo que caduca antes
+
+- Sección **Ideas para cocinar** con hasta 6 recetas según lo que hay
+  en casa, ordenadas para aprovechar primero lo que caduca antes.
+- Recetario propio de 28 recetas caseras (`servidor/recetario.js`).
+  Cada ingrediente tiene palabras clave que se buscan en los nombres
+  de los alimentos, sin tener en cuenta tildes ni plurales
+  («Tomates pera» cuenta como «tomate»).
+- Puntuación: un alimento que caduca en los próximos 3 días suma
+  mucho más que uno sin prisa, y cada ingrediente obligatorio que
+  falta resta. Solo se proponen recetas con al menos la mitad de
+  los ingredientes obligatorios.
+- Los alimentos caducados o agotados no cuentan como disponibles.
+- Cada receta indica qué tienes, qué caduca pronto y qué falta, con
+  los pasos desplegables.
+- **Añadir lo que falta a la lista** pasa a la lista de la compra los
+  ingredientes obligatorios que no tienes, sin repetir los que ya
+  están pendientes.
+
 ## Persistencia
 
 Los usuarios, los alimentos, la lista de la compra y las sesiones se
@@ -422,6 +441,8 @@ Cambiar `SESSION_SECRET` invalida las cookies firmadas con la clave anterior.
 | PUT | `/api/alimentos/:id` | Propietario del alimento |
 | PATCH | `/api/alimentos/:id/cantidad` | Propietario del alimento |
 | GET | `/api/productos/:codigo` | Usuario autenticado (10 por minuto) |
+| GET | `/api/recetas` | Usuario autenticado |
+| POST | `/api/recetas/:id/lista-compra` | Usuario autenticado |
 | DELETE | `/api/alimentos/:id` | Propietario del alimento |
 | POST | `/api/prueba/bloqueo` | Público; ejercicio técnico de cálculo de bloqueo |
 
